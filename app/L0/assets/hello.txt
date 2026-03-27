@@ -1,0 +1,2 @@
+Agent One server static asset test file.
+This file is served directly by the Node server without proxying.

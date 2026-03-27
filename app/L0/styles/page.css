@@ -1,0 +1,276 @@
+:root {
+  color-scheme: light;
+  --page-bg: #f5f1e8;
+  --panel: rgba(255, 252, 246, 0.88);
+  --text: #1b1b18;
+  --muted: #5a584f;
+  --accent: #0b6e4f;
+  --accent-soft: rgba(11, 110, 79, 0.08);
+  --danger: #9a3c28;
+  --border: rgba(27, 27, 24, 0.12);
+  --shadow: 0 16px 36px rgba(44, 39, 31, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(11, 110, 79, 0.08), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(194, 117, 61, 0.1), transparent 24%),
+    linear-gradient(135deg, #f8f4ec 0%, var(--page-bg) 100%);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.95em;
+}
+
+.app-page {
+  min-height: 100vh;
+}
+
+.page-shell {
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.page-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.page-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.hero-card,
+.panel,
+.chat-shell,
+.dialog-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.hero-card,
+.panel {
+  padding: 18px;
+}
+
+.page-eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.02;
+}
+
+.page-copy {
+  max-width: 46rem;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.panel p {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 8px rgba(11, 110, 79, 0.12);
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.field span,
+.field label {
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.button-row,
+.actions,
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.button-row button,
+.secondary-button,
+.primary-button {
+  border-radius: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(11, 110, 79, 0.14);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.button-row button,
+.secondary-button {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.primary-button {
+  border: 0;
+  color: #f7f3eb;
+  background: var(--accent);
+}
+
+.secondary-button.danger {
+  color: var(--danger);
+  border-color: rgba(154, 60, 40, 0.16);
+  background: rgba(154, 60, 40, 0.08);
+}
+
+.button-row button:hover,
+.secondary-button:hover,
+.primary-button:hover {
+  transform: translateY(-1px);
+}
+
+.hint,
+.runtime,
+.caption,
+.dialog-note {
+  color: var(--muted);
+  font-size: 0.96rem;
+}
+
+.media-frame {
+  width: 100%;
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(27, 27, 24, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+}
+
+.media-frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: linear-gradient(135deg, rgba(11, 110, 79, 0.1), rgba(194, 117, 61, 0.1));
+}
+
+pre {
+  overflow: auto;
+  margin: 14px 0 0;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(27, 27, 24, 0.1);
+  background: #171613;
+  color: #f6f0e2;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.chat-dialog::backdrop {
+  background: rgba(24, 22, 19, 0.38);
+  backdrop-filter: blur(6px);
+}
+
+.dialog-card {
+  width: min(720px, calc(100vw - 32px));
+  padding: 18px;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+@media (max-width: 780px) {
+  .page-shell {
+    padding: 12px;
+  }
+
+  .hero-card,
+  .panel {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}

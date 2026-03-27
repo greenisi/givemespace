@@ -1,0 +1,69 @@
+{
+  "name": "agent-one",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-first AI agent with a thin Node.js server.",
+  "author": "Jan Tomasek",
+  "main": "desktop/shared/main.js",
+  "scripts": {
+    "start": "node A1.js serve",
+    "dev": "node --watch A1.js serve",
+    "desktop:dev": "electron .",
+    "desktop:pack": "electron-builder --dir",
+    "desktop:dist": "electron-builder",
+    "desktop:dist:mac": "electron-builder --mac"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "build": {
+    "appId": "com.agentone.desktop",
+    "productName": "Agent One",
+    "files": [
+      "A1.js",
+      "app/**/*",
+      "commands/**/*",
+      "server/**/*",
+      "desktop/shared/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "desktop/resources"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": false,
+      "entitlements": "platforms/macos/entitlements.mac.plist",
+      "entitlementsInherit": "platforms/macos/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "platforms/windows/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "icon": "platforms/linux/icons",
+      "category": "Development",
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "^35.1.4",
+    "electron-builder": "^26.0.12"
+  },
+  "nodejsformobile": {
+    "entry": "A1.js",
+    "defaultCommand": "serve",
+    "purpose": "Thin mobile-compatible server bridge for fetch proxying and SQLite access."
+  }
+}

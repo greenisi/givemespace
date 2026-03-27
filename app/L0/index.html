@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent One</title>
+    <link rel="stylesheet" href="/styles/shell.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="shell-sidebar" aria-label="App navigation">
+        <div class="shell-brand" aria-hidden="true">A1</div>
+        <nav class="shell-nav">
+          <button
+            class="shell-nav-button"
+            type="button"
+            data-shell-app="chat"
+            title="Chat"
+            aria-label="Open chat"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M5 6.5C5 5.12 6.12 4 7.5 4h9C17.88 4 19 5.12 19 6.5v6c0 1.38-1.12 2.5-2.5 2.5H11l-3.7 3.08c-.66.55-1.3.08-1.3-.77V15.5A2.5 2.5 0 0 1 5 13V6.5Z"
+              />
+            </svg>
+          </button>
+          <button
+            class="shell-nav-button"
+            type="button"
+            data-shell-app="tests"
+            title="Test Suite"
+            aria-label="Open test suite"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M7 4h10a2 2 0 0 1 2 2v3H5V6a2 2 0 0 1 2-2Zm-2 7h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7Zm3 2.25A1.25 1.25 0 1 0 8 15.75a1.25 1.25 0 0 0 0-2.5Zm4 0A1.25 1.25 0 1 0 12 15.75a1.25 1.25 0 0 0 0-2.5Zm4 0A1.25 1.25 0 1 0 16 15.75a1.25 1.25 0 0 0 0-2.5Z"
+              />
+            </svg>
+          </button>
+        </nav>
+        <div class="shell-sidebar-footer">
+          <span class="shell-status-dot" aria-hidden="true"></span>
+        </div>
+      </aside>
+      <main class="shell-main">
+        <iframe
+          class="shell-frame"
+          data-shell-frame
+          title="Agent One app frame"
+          src="/pages/chat.html"
+        ></iframe>
+      </main>
+    </div>
+    <script type="module" src="/init.js"></script>
+  </body>
+</html>

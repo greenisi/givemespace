@@ -1,0 +1,6 @@
+{
+  "name": "agent-one-server-asset",
+  "servedBy": "node-server",
+  "type": "static-json",
+  "purpose": "direct static asset verification"
+}
