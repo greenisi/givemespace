@@ -332,20 +332,47 @@ function updateBranch(projectRoot, remoteName, requestedBranchName = null) {
   console.log(`Updated ${branchName} to ${remoteName}/${branchName} at ${shortCommit}.`);
 }
 
-function checkoutTargetRevision(projectRoot, remoteName, target) {
+function resolveTargetBranch(projectRoot, remoteName) {
   const currentBranch = readCurrentBranch(projectRoot);
   if (currentBranch) {
-    rememberBranch(projectRoot, currentBranch);
+    return currentBranch;
   }
 
+  return resolveReconnectBranch(projectRoot, remoteName);
+}
+
+function applyRevisionToBranch(projectRoot, remoteName, branchName, resolvedTarget) {
+  reattachBranch(projectRoot, remoteName, branchName);
+  rememberBranch(projectRoot, branchName);
+
+  const previousCommit = readHeadCommit(projectRoot);
+  runGit(projectRoot, ["reset", "--hard", resolvedTarget.revision]);
+  const nextCommit = readHeadCommit(projectRoot);
+  const shortCommit = readShortCommit(projectRoot);
+
+  if (previousCommit === nextCommit) {
+    console.log(`Already on ${branchName} at ${resolvedTarget.label} (${shortCommit}).`);
+    return;
+  }
+
+  console.log(`Updated ${branchName} to ${resolvedTarget.label} at ${shortCommit}.`);
+}
+
+function checkoutTargetRevision(projectRoot, remoteName, target) {
   const resolvedTarget = resolveTargetRevision(projectRoot, remoteName, target);
   if (!resolvedTarget) {
     throw new Error(`Could not resolve "${target}" as an exact tag or a short/full commit hash from ${remoteName}.`);
   }
 
+  const targetBranch = resolveTargetBranch(projectRoot, remoteName);
+  if (targetBranch) {
+    applyRevisionToBranch(projectRoot, remoteName, targetBranch, resolvedTarget);
+    return;
+  }
+
   runGit(projectRoot, ["checkout", "--detach", resolvedTarget.revision]);
   const shortCommit = readShortCommit(projectRoot);
-  console.log(`Checked out ${resolvedTarget.label} at ${shortCommit}.`);
+  console.log(`Checked out ${resolvedTarget.label} at ${shortCommit} in detached HEAD mode.`);
 }
 
 export const help = {
@@ -359,7 +386,7 @@ export const help = {
     "node A1.js update <commit>"
   ],
   description:
-    "For source checkouts only. Requires Git on PATH. Without an argument, fast-forwards the current branch from origin, or reconnects from detached HEAD to the remembered or default origin branch first. You can also target a branch explicitly with --branch <branch> or a bare branch name. Version tags and short/full commit hashes still check out that exact revision in detached HEAD mode."
+    "For source checkouts only. Requires Git on PATH. Without an argument, fast-forwards the current branch from origin, or reconnects from detached HEAD to the remembered or default origin branch first. You can also target a branch explicitly with --branch <branch> or a bare branch name. Version tags and short/full commit hashes move the current or remembered branch to that exact revision when possible, falling back to detached HEAD only when no branch can be recovered."
 };
 
 export async function execute(context) {
