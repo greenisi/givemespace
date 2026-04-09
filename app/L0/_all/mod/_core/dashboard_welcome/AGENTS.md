@@ -14,7 +14,7 @@ This module owns:
 
 - `dashboard-welcome.html`, `dashboard-welcome.js`, and `dashboard-welcome.css`: the injected welcome UI, preference loading and saving, and demo-space launch actions
 - `ext/html/_core/dashboard/content_start/dashboard-welcome.html`: thin dashboard extension adapter for the welcome surface
-- `examples/`: the curated bundled example-space folders copied into the user's writable spaces area on demand; the current firmware bundle intentionally contains only `examples/arcade/`
+- `examples/`: the curated bundled example-space folders copied into the user's writable spaces area on demand; the current firmware bundle contains `examples/agent-zero-videos/`, `examples/arcade/`, and `examples/daily-dashboard/`
 
 ## Local Contracts
 
@@ -33,6 +33,7 @@ Current persistence and demo-space contract:
 - bundled demo spaces live under this module's `examples/` folder and are copied through the spaces runtime instead of being edited in place
 - `dashboard-welcome.js` should discover bundled examples at runtime through the `file_paths` pattern `mod/_core/dashboard_welcome/examples/*/space.yaml` instead of maintaining a hardcoded example list
 - each bundled example folder should own its card metadata in `space.yaml`, including `title`, `description`, `icon`, and `icon_color`
+- bundled example card copy should stay concise and polished: use clean title casing for titles and short sentence-case descriptions that read naturally in the welcome cards
 - bundled demo `space.yaml` files should own the icon and color shown in the welcome cards, and installing a demo should preserve those values into the created user space
 - welcome actions should call the public `space.spaces.installExampleSpace(...)` runtime helper rather than duplicating filesystem logic locally
 - demo installs launched from the dashboard should push a new space route entry instead of replacing the dashboard route, so browser Back returns to the dashboard rather than exposing whatever older space happened to be behind it in history

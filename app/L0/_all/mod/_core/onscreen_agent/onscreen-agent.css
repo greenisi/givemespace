@@ -536,6 +536,12 @@
   pointer-events: none;
 }
 
+.onscreen-agent-shell.is-edge-hidden .onscreen-agent-history-shell,
+.onscreen-agent-shell.is-edge-hidden .onscreen-agent-panel {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .onscreen-agent-panel {
   position: relative;
   border: 1px solid var(--onscreen-agent-border);
