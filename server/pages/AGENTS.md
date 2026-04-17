@@ -16,6 +16,7 @@ Current page shells:
 - `admin.html`: authenticated admin shell for `/admin`
 - `login.html`: public password-login shell for `/login`
 - `enter.html`: firmware-backed launcher shell served at `/enter` for launcher-eligible sessions
+- `share_space.html`: public hosted-share clone shell for `/share/space/<token>`
 
 Current root discovery files:
 
@@ -31,6 +32,8 @@ Current public shell assets:
 - `res/browser-compat.js`
 - `res/enter-guard.js`
 - `res/user-crypto.js`
+- `res/share-space.js`
+- `res/share-crypto.js`
 - `res/readme-banner.webp` as the shared social-preview image for page-shell Open Graph and Twitter cards
 - login-shell image assets under `res/`
 - login-shell social-link SVG assets under `res/`
@@ -60,10 +63,10 @@ Current public shell assets:
 `login.html`:
 
 - is public and must not depend on authenticated `/mod/...` assets
-- owns the login flow, guest creation flow, and pre-auth layout
+- owns the login flow, guest creation flow, login-disabled fallback copy, and pre-auth layout
 - declares the same shared product-level Open Graph and Twitter social-preview card as the other shells, so anonymous shares of `https://space-agent.ai/` still resolve to a Space Agent product preview after the server redirects crawlers to `/login`
 - renders a centered footer below the main shell content with white semi-transparent outbound icons for GitHub, Discord, X, and a slightly larger Agent Zero logo in the last slot, then places the injected `SPACE_PROJECT_VERSION` value beneath that icon row
-- reads injected `meta[name="space-config"]` tags directly so guest-login UI can follow backend runtime parameters without authenticated module imports
+- reads injected `meta[name="space-config"]` tags directly so guest-login UI and the password form can follow backend runtime parameters such as `ALLOW_GUEST_USERS` and `LOGIN_ALLOWED` without authenticated module imports
 - declares the shared Space Agent transparent-helmet favicon set, including ICO fallback, PNG browser and install icons, Apple touch icon, and the `Login | Space Agent` document title
 - runs the shared public-shell browser compatibility gate from `server/pages/res/browser-compat.js` before login logic starts, and renders a visible blocking message when the browser is missing required runtime features such as modern JavaScript syntax, module loading, fetch, storage, text codecs, or Web Crypto
 - runs the per-user `userCrypto` provisioning or unlock step inside the same `/api/login_challenge` plus `/api/login` transaction using the public helper in `server/pages/res/user-crypto.js`; the helper must stay public because `/login` cannot depend on authenticated `/mod/...` assets
@@ -72,6 +75,7 @@ Current public shell assets:
 - if that first authenticated recovery pass still leaves `userCrypto` missing, the authenticated bootstrap should sign the browser out instead of leaving the app running in a half-working state
 - if login completes without a usable `userCrypto` record, the shell must fail sign-in in place instead of redirecting into an authenticated-page logout loop
 - grants same-tab launcher access in `sessionStorage` after successful password sign-in so the tab that just authenticated can land on `/` while fresh tabs still route through `/enter`
+- when `LOGIN_ALLOWED=false`, keeps the floating public shell, product copy, self-host CTA, footer links, and version label visible but replaces the login form with a plain `Login is disabled in this system.` message and suppresses guest-account actions
 - renders the guest-account removal warning with yellow warning treatment and a recovery-safe inline Google Material Symbols warning icon, without depending on authenticated icon fonts
 - keeps the self-host call-to-action visually separated from the sign-in form even when guest account creation is disabled and the guest-only block is hidden
 - opens the self-host call-to-action as a two-panel login-styled modal: `Native App` and `Own Server` panels split left-right on desktop and stack top-bottom on mobile, with a privacy/security subtitle, one short explanatory line per panel, a large inline Material icon, and a local inline-icon action button
@@ -81,8 +85,17 @@ Current public shell assets:
 - keeps the mirrored canvas gradient and star or glow backdrop pinned to fixed viewport layers while the login shell content scrolls
 - keeps login-specific styling and motion local
 
-`enter.html`:
+`share_space.html`:
 
+- is public and exists only to unwrap one hosted share into a fresh guest account
+- must not depend on authenticated `/mod/...` assets
+- reuses the mirrored public backdrop assets from `server/pages/res/space-backdrop.*`
+- declares the `Shared Space | Space Agent` document title plus the shared favicon family
+- reads the share token from the multi-segment `/share/space/<token>` route, checks whether the stored share metadata declares browser-side password protection, prompts for the password when needed, decrypts the ZIP in the browser through `server/pages/res/share-crypto.js`, then posts the clear ZIP bytes to `/api/cloud_share_clone`
+- should keep the copy explicit that shared code opens only inside a temporary guest account and never inside the visitor's existing user folder
+- should surface clone failures in place instead of redirecting into half-initialized guest sessions
+
+`enter.html`:
 - must stay safe even when routed customware is broken
 - must not depend on authenticated `/mod/...` assets
 - is served for launcher-eligible sessions; in multi-user mode, unauthenticated requests are redirected to `/login` before this shell loads
@@ -110,19 +123,20 @@ Current public shell assets:
 
 ## Public Asset Mirroring
 
-`/login` and `/enter` cannot rely on authenticated module assets for recovery-safe shells, and launcher-gated page shells must redirect before customware loads, so `server/pages/res/space-backdrop.css`, `server/pages/res/space-backdrop.js`, `server/pages/res/browser-compat.js`, and `server/pages/res/enter-guard.js` mirror the public-shell recovery behavior.
+`/login`, `/enter`, and `/share/space/<token>` cannot rely on authenticated module assets for recovery-safe shells, and launcher-gated page shells must redirect before customware loads, so `server/pages/res/space-backdrop.css`, `server/pages/res/space-backdrop.js`, `server/pages/res/browser-compat.js`, and `server/pages/res/enter-guard.js` mirror the public-shell recovery behavior.
 
 Rules:
 
 - keep the mirrored public backdrop aligned with `_core/visual`
 - keep both the mirrored base canvas gradient and the mirrored star or glow scene fixed to the viewport so public-shell scrolling never drags them
 - if the shared backdrop visuals or runtime behavior change, review and update these mirrored files in the same session
+- `server/pages/res/share-space.js` owns the public hosted-share open flow, and `server/pages/res/share-crypto.js` owns the browser-side password-based ZIP encryption and decryption used by both the public share shell and the authenticated spaces share modal
 - keep public-shell assets under `server/pages/res/` instead of embedding large data blobs into page HTML
 - keep crawler and LLM discovery files at the root `server/pages/` level so they can be aliased directly to `/<filename>` without going through authenticated page routes
 - keep the shared social-preview banner in `server/pages/res/` so page-shell Open Graph and Twitter metadata never depend on `.github/` paths or external asset hosts
 - keep the shared favicon asset family in `server/pages/res/`, derive it from the onscreen-agent assistant helmet avatar, keep the background transparent, and scale the helmet to fill the available icon space without reintroducing a badge or circular plate
 - keep the manifest icon entries as standard install icons rather than `maskable` assets unless the icon family is intentionally redesigned for adaptive-icon safe zones
-- server page shells must not load remote runtime resources; scripts, styles, fonts, images, icons, and recovery visuals must be local files or inline SVG/CSS so `/login`, `/enter`, `/`, and `/admin` can load without internet access
+- server page shells must not load remote runtime resources; scripts, styles, fonts, images, icons, and recovery visuals must be local files or inline SVG/CSS so `/login`, `/enter`, `/share/space/<token>`, `/`, and `/admin` can load without internet access
 - page-shell HTML and mirrored public assets should be served with explicit no-store headers so recovery-safe shells and their helper scripts refresh immediately after source updates on every origin
 - external `https://...` URLs in page shells are allowed only as explicit user navigation targets, never as required runtime assets
 

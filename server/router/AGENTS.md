@@ -70,7 +70,8 @@ Pages:
 
 - `pages_handler.js` is the only owner of page auth gating, pretty-route redirects, `/logout`, `/pages/res/...`, root favicon and manifest aliases, injected frontend runtime-config meta tags, and project-version placeholder injection
 - `pages_handler.js` is also the only owner of the public root crawler and LLM discovery aliases for `/robots.txt`, `/llms.txt`, `/llms-full.txt`, and `/sitemap.xml`
-- `/login` is public
+- `/login` is public even when `LOGIN_ALLOWED=false`, but the login shell should then show only the public copy and links instead of the password form
+- `/share/space/<token>` is a special public multi-segment page route served directly by `pages_handler.js` when guest users are enabled; if guest users are disabled, it should resolve as missing
 - `/enter` serves the firmware-backed launcher shell for launcher-eligible sessions: always in `SINGLE_USER_APP=true`, and also for authenticated multi-user requests; unauthenticated multi-user requests are redirected to `/login`
 - `pages_handler.js` injects a pre-module page-shell guard into `/` and `/admin` whenever the current request already has launcher access, so a new browser-opened tab or window is redirected to `/enter?next=<current-url>` while reloads in the same tab keep loading normally; the framework may pre-grant that same access marker for its own same-origin `_blank` opens before the guarded page loads
 - page shells that declare the `SPACE_PROJECT_VERSION` placeholder receive the resolved project version string from `server/lib/utils/project_version.js`; `/login` and `/enter` use this for the centered public-shell version label

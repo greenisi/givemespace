@@ -61,6 +61,7 @@ This module owns:
 - when extension-loading behavior changes, keep the matching `docs/app/` and `docs/server/` pages aligned in the same session, and update `docs/cli/` only when the change really affects CLI-managed runtime params
 - when skill discovery, context tags, or skill frontmatter rules change, keep `docs/app/modules-and-extensions.md`, `docs/app/admin-agent-runtime.md`, `docs/app/spaces-and-widgets.md`, `docs/agent/skills-and-documentation.md`, and `docs/agent/prompt-and-execution.md` aligned in the same session
 - when the shared `development` router skill changes its visibility model or nested-skill index structure, keep `docs/agent/skills-and-documentation.md` aligned in the same session
+- when the `space.browser` runtime surface or the top-level `browser-control` skill changes, keep `docs/app/runtime-and-layers.md` and `docs/agent/skills-and-documentation.md` aligned in the same session
 - when a new first-party routed page also advertises itself through `ext/panels/*.yaml` or persists user-local promptinclude or settings files, reflect that in `docs/app/modules-and-extensions.md` and `docs/app/runtime-and-layers.md` in the same session
 - when dashboard panel creation or panel-navigation helper workflows change, keep `docs/app/modules-and-extensions.md`, `docs/agent/skills-and-documentation.md`, and `ext/skills/documentation/SKILL.md` aligned in the same session
 - when a new first-party shell extension or router-overlay module lands, keep `docs/app/modules-and-extensions.md` aligned with the owning module doc in the same session

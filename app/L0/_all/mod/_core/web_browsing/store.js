@@ -3,6 +3,10 @@ import {
   send as sendBrowserFrameMessage
 } from "./browser-frame-bridge.js";
 import {
+  AGENT_FUNCTION_REQUIREMENT,
+  guardAgentFunction
+} from "./agent-function-availability.js";
+import {
   collectWebviewNavigationState,
   focusWebview,
   getDesktopBrowserWebviewPartition,
@@ -283,6 +287,22 @@ function buildRuntimeBrowserWindowSnapshot(browserWindow) {
   };
 }
 
+function getFrontmostBrowserWindow(windows) {
+  if (!Array.isArray(windows) || !windows.length) {
+    return null;
+  }
+
+  return windows.reduce((frontmostWindow, browserWindow) => {
+    if (!frontmostWindow) {
+      return browserWindow;
+    }
+
+    return Number(browserWindow?.zIndex || 0) >= Number(frontmostWindow?.zIndex || 0)
+      ? browserWindow
+      : frontmostWindow;
+  }, null);
+}
+
 function normalizeCreateWindowOptions(value) {
   if (typeof value === "string") {
     const url = String(value).trim();
@@ -317,46 +337,46 @@ function createRuntimeBrowserHandle(store, id) {
         return null;
       }
     },
-    close() {
+    close: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
       store.closeWindow(normalizedId);
-    },
-    focus(options = {}) {
+    }),
+    focus: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
       requireWindow();
       store.focusWindow(normalizedId, options);
       return store.getWindow(normalizedId);
-    },
-    forward() {
+    }),
+    forward: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
       return store.goForward(normalizedId);
-    },
+    }),
     get id() {
       return normalizedId;
     },
-    navigate(url) {
+    navigate: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (url) => {
       requireWindow();
       store.updateAddressValue(normalizedId, String(url ?? ""));
       return store.navigateToAddress(normalizedId);
-    },
-    reload() {
+    }),
+    reload: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
       return store.reloadFrame(normalizedId);
-    },
-    send(type, payload = null, options = {}) {
+    }),
+    send: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (type, payload = null, options = {}) => {
       requireWindow();
       return sendBrowserFrameMessage(normalizedId, type, payload, options);
-    },
-    sync(options = {}) {
+    }),
+    sync: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
       requireWindow();
       return store.syncNavigationState(normalizedId, options);
-    },
+    }),
     get state() {
       return buildRuntimeBrowserWindowSnapshot(store.getWindow(normalizedId));
     },
-    back() {
+    back: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
       return store.goBack(normalizedId);
-    },
+    }),
     get window() {
       return store.getWindow(normalizedId);
     }
@@ -384,12 +404,16 @@ function ensureBrowserRuntimeNamespace(store) {
 
     return handle;
   };
+  const openHandle = (options = {}) => {
+    const id = store.createWindow(normalizeCreateWindowOptions(options));
+    return getHandle(id);
+  };
   const namespace = {
     ...previousNamespace,
-    back(id) {
+    back: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return requireHandle(id).back();
-    },
-    close(id) {
+    }),
+    close: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       const normalizedId = String(id || "").trim();
 
       if (!normalizedId) {
@@ -397,11 +421,27 @@ function ensureBrowserRuntimeNamespace(store) {
       }
 
       store.closeWindow(normalizedId);
-    },
-    create(options = {}) {
-      return store.createWindow(normalizeCreateWindowOptions(options));
-    },
-    focus(id, options = {}) {
+    }),
+    closeAll: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
+      const ids = store.windows.map((browserWindow) => browserWindow.id);
+
+      ids.forEach((id) => {
+        store.closeWindow(id);
+      });
+
+      return ids.length;
+    }),
+    count: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
+      return store.windows.length;
+    }),
+    create: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
+      return openHandle(options);
+    }),
+    current: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
+      const browserWindow = getFrontmostBrowserWindow(store.windows);
+      return browserWindow ? getHandle(browserWindow.id) : null;
+    }),
+    focus: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, options = {}) => {
       const normalizedId = String(id || "").trim();
 
       if (!normalizedId) {
@@ -410,34 +450,41 @@ function ensureBrowserRuntimeNamespace(store) {
 
       store.focusWindow(normalizedId, options);
       return getHandle(normalizedId);
-    },
-    forward(id) {
+    }),
+    forward: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return requireHandle(id).forward();
-    },
-    get(id) {
+    }),
+    get: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return getHandle(id);
-    },
-    ids() {
+    }),
+    has: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
+      return Boolean(getHandle(id));
+    }),
+    ids: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       return store.windows.map((browserWindow) => browserWindow.id);
-    },
-    list() {
+    }),
+    list: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       return store.windows.map((browserWindow) => buildRuntimeBrowserWindowSnapshot(browserWindow));
-    },
-    navigate(id, url) {
+    }),
+    navigate: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, url) => {
       return requireHandle(id).navigate(url);
-    },
-    open(options = {}) {
-      return store.createWindow(normalizeCreateWindowOptions(options));
-    },
-    reload(id) {
+    }),
+    open: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
+      return openHandle(options);
+    }),
+    reload: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return requireHandle(id).reload();
-    },
-    send(id, type, payload = null, options = {}) {
+    }),
+    send: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, type, payload = null, options = {}) => {
       return sendBrowserFrameMessage(id, type, payload, options);
-    },
-    sync(id, options = {}) {
+    }),
+    state: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
+      const browserWindow = store.getWindow(String(id || "").trim());
+      return buildRuntimeBrowserWindowSnapshot(browserWindow);
+    }),
+    sync: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, options = {}) => {
       return requireHandle(id).sync(options);
-    }
+    })
   };
 
   runtime.browser = namespace;
@@ -1079,6 +1126,7 @@ const model = {
     };
     const handleDidStartLoading = () => {
       browserWindow.bridgeStateReady = false;
+      runtimeState.injected = false;
       stabilizeEmbedder();
       syncState();
     };

@@ -31,6 +31,7 @@ Current subsystem-local docs in the server tree:
 - `server/lib/customware/AGENTS.md`
 - `server/lib/auth/AGENTS.md`
 - `server/lib/file_watch/AGENTS.md`
+- `server/lib/share/AGENTS.md`
 - `server/lib/tmp/AGENTS.md`
 - `server/lib/git/AGENTS.md`
 
@@ -77,7 +78,7 @@ Parent and child split rules:
 
 ## Responsibilities
 
-- serve the root HTML entry shells and public page-shell assets from `server/pages/`
+- serve the root HTML entry shells and public page-shell assets from `server/pages/`, including the public hosted-share clone shell at `/share/space/<token>` when guest users are enabled
 - resolve browser-delivered modules from the layered `app/L0`, `app/L1`, and `app/L2` customware model, with writable `L1` and `L2` optionally rooted under `CUSTOMWARE_PATH`
 - expose server API modules from `server/api/`
 - provide the outbound fetch proxy at `/api/proxy`
@@ -88,7 +89,7 @@ Parent and child split rules:
 - run deterministic primary-owned periodic maintenance jobs from `server/jobs/` for backend-enforced cleanup such as guest-account pruning
 - keep the backend-only auth secrets outside the logical app tree, using shared environment injection via `SPACE_AUTH_PASSWORD_SEAL_KEY` and `SPACE_AUTH_SESSION_HMAC_KEY` plus local gitignored fallback storage under `server/data/` by default or `SPACE_AUTH_DATA_DIR` when that override is set; `userCrypto` also keeps a local backend-share cache there, while the shared `L2/<username>/meta/user_crypto.json` record carries a backend-sealed share copy for multi-instance recovery
 - manage `server/tmp/` as janitor-backed transient storage for low-RAM server-side artifacts such as folder-download archives
-- resolve runtime parameters from launch overrides, stored `.env` values, process environment variables, and schema defaults, including backend storage parameters such as `CUSTOMWARE_PATH`
+- resolve runtime parameters from launch overrides, stored `.env` values, process environment variables, and schema defaults, including backend storage parameters such as `CUSTOMWARE_PATH`, password-login gating through `LOGIN_ALLOWED`, and hosted-share receiver settings through `CLOUD_SHARE_ALLOWED` plus `CLOUD_SHARE_URL`
 - when `WORKERS>1`, run a clustered primary-plus-worker runtime where the primary owns authoritative shared state and the live watchdog while workers serve HTTP in parallel
 - expose distinct OS process titles for operator visibility: `space-serve` for single-process runtime, `space-serve-p` for clustered primary, and `space-serve-w<N>` for clustered workers
 - expose `frontend_exposed` runtime parameters to page shells as injected meta tags
@@ -106,7 +107,7 @@ Current server layout:
 - `server/config.js`: filesystem roots and static server paths
 - `server/dev_server.js`: source-checkout dev supervisor used by `npm run dev`
 - `server/lib/utils/runtime_params.js`: shared runtime-parameter schema loading, validation, startup resolution, and frontend-exposure metadata
-- `server/pages/`: page shells for `/`, `/login`, `/enter`, and `/admin`, plus public shell assets under `server/pages/res/`
+- `server/pages/`: page shells for `/`, `/login`, `/enter`, `/admin`, and the public hosted-share clone shell at `/share/space/<token>`, plus public shell assets under `server/pages/res/`
 - `server/data/`: gitignored backend-only secret storage used as the default local fallback for auth keys and per-user `userCrypto` server shares when shared deployment secrets are not injected and `SPACE_AUTH_DATA_DIR` is unset
 - `server/api/`: endpoint modules loaded by endpoint name
 - `server/router/`: top-level request routing, page handling, `/mod/...` serving, direct app-file fetches, request context, response helpers, proxy transport, and CORS handling
@@ -117,6 +118,7 @@ Current server layout:
 - `server/lib/customware/user_quota.js`: optional per-user `L2` folder size accounting and cached quota projection helpers for app-file mutations
 - `server/lib/auth/`: password verification, session service, user file helpers, user indexing, and user-management helpers
 - `server/lib/file_watch/`: config-driven watchdog plus derived indexes such as `path_index`, `group_index`, and `user_index`, all keyed by logical `/app/...` project paths
+- `server/lib/share/`: backend-owned hosted-share archive storage, ZIP validation, authenticated import, and anonymous guest-clone helpers
 - `server/lib/tmp/`: `server/tmp/` lifecycle, stale-entry cleanup, and low-RAM ZIP archive creation for attachment-style downloads
 - `server/lib/git/`: Git backend abstraction used by update flows and Git-backed module installs
 - `server/tmp/`: transient disk-backed artifacts such as folder-download ZIP files
@@ -143,7 +145,7 @@ Core runtime contracts:
 - primary-owned background jobs also run only on that authoritative runtime owner: the lone server process when `WORKERS=1`, or the clustered primary when `WORKERS>1`
 - responses expose `Space-State-Version` and `Space-Worker`; requests may send `Space-State-Version` as a required minimum replicated version, and the router may briefly wait for worker catch-up before handling the request
 - runtime auth may switch to a single-user mode where every request resolves to the implicit `user` principal
-- `/login` stays the public password-login entry
+- `/login` stays the public password-login entry when `LOGIN_ALLOWED=true`; when `LOGIN_ALLOWED=false`, the shell stays public but the form and password-login endpoints are disabled
 - `/enter` is the firmware-backed launcher route for launcher-eligible sessions: always in single-user runtime, and also for authenticated multi-user requests; unauthenticated multi-user requests are redirected to `/login`
 - launcher-eligible requests route new browser-opened tabs and windows through `/enter` by a server-injected page-shell guard on `/` and `/admin`, while reloads in the same tab keep their current target; framework-created same-origin `_blank` opens may pre-grant the same tab-access marker before navigation
 - `HOST` and `PORT` come from the same runtime-parameter system as other server params instead of a special-case startup path; `PORT=0` is valid when a caller wants the OS to assign a free port, and the started runtime object must publish the resolved bound `port` and `browserUrl` after `listen()`
@@ -155,6 +157,7 @@ Core runtime contracts:
 - logical `/app/L1/...` and `/app/L2/...` paths may resolve to disk outside the repo when `CUSTOMWARE_PATH` is configured, while `/app/L0/...` remains repo-backed
 - `USER_FOLDER_SIZE_LIMIT_BYTES=0` disables user-folder quotas; positive values cap each `L2/<user>/` folder in bytes, block projected growth over the cap, and allow only size-reducing app-file mutations while a folder is already over the cap
 - `/L0/...`, `/L1/...`, and `/L2/...` direct fetches require authentication and use the same read permission model as the file APIs
+- `/share/space/<token>` is a public multi-segment page route owned by `pages_handler.js`; it is available only when guest users are enabled, otherwise the router should treat it as missing
 - non-`/mod`, non-`/api`, and non-app-fetch requests stay limited to the root page shells and page actions owned by `server/pages/`
 - `/logout` is handled by the pages layer and clears the current session cookie before redirecting to `/login`
 - autoscaled or multi-instance deployments must inject the same `SPACE_AUTH_PASSWORD_SEAL_KEY` and `SPACE_AUTH_SESSION_HMAC_KEY` values into every instance; the local `server/data/` or `SPACE_AUTH_DATA_DIR` fallback is for single-instance development and other shared-filesystem setups
@@ -170,6 +173,7 @@ The server relies on a small set of shared infrastructure contracts. Do not re-i
 - file listing and pattern discovery may be filtered to writable paths through the shared file-access helper, and Git repository discovery returns writable owner roots without exposing `.git` metadata
 - `server/lib/customware/git_history.js` is the canonical entry point for optional per-owner writable-layer Git history and rollback, including L2 auth-file ignore and rollback preservation rules
 - `server/lib/git/` owns Git backend selection for source-checkout update flows, Git-backed module installs, and local-history clients; server runtime param `GIT_BACKEND` defaults to `auto` and may force `native`, `nodegit`, or `isomorphic`
+- `server/lib/share/service.js` is the canonical hosted-share helper for backend-owned ZIP storage under `CUSTOMWARE_PATH/share/spaces/`, archive validation, authenticated imports, and guest-clone session issuance; endpoints and page shells must not duplicate that logic
 - `server/lib/tmp/` owns the canonical `server/tmp/` janitor and disk-backed archive creation for streamed folder downloads
 - `server/lib/customware/module_inheritance.js` and `server/lib/customware/extension_overrides.js` are the canonical module and extension resolution helpers
 - `server/lib/customware/module_manage.js` is the canonical module list, info, install, and remove helper
@@ -215,6 +219,7 @@ Handlers may return:
 Current endpoint families:
 
 - public auth and health: `health`, `guest_create`, `login_challenge`, `login`, `login_check`
+- hosted share and import: `cloud_share_create`, `cloud_share_info`, `cloud_share_download`, `cloud_share_clone`, `space_import`
 - app files: `file_list`, `file_paths`, `file_read`, `file_write`, `file_delete`, `file_copy`, `file_move`, `file_info`, `folder_download`
 - local history: `git_history_list`, `git_history_diff`, `git_history_preview`, `git_history_rollback`, `git_history_revert`
 - modules: `module_list`, `module_info`, `module_install`, `module_remove`

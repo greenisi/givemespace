@@ -61,6 +61,7 @@ import {
 } from "/mod/_core/spaces/thumbnail_experiment/index.js";
 import { positionPopover } from "/mod/_core/visual/chrome/popover.js";
 import { openIconColorSelector } from "/mod/_core/visual/icons/icon-color-selector.js";
+import { openSpaceShareModal } from "/mod/_core/spaces/space-share-modal.js";
 import {
   DEFAULT_WIDGET_SIZE,
   defineWidget,
@@ -3090,6 +3091,28 @@ const spacesModel = {
       return null;
     } finally {
       this.clearingCurrentSpaceWidgets = false;
+    }
+  },
+
+  async openCurrentSpaceShareModal() {
+    if (!this.currentSpaceId || !this.currentSpace) {
+      return;
+    }
+
+    try {
+      await this.flushCurrentSpaceMetaSave({
+        suppressErrors: true
+      });
+      await openSpaceShareModal({
+        currentSpace: this.currentSpace,
+        spaceId: this.currentSpaceId,
+        spaceTitle: this.currentSpaceDisplayTitle
+      });
+    } catch (error) {
+      logSpacesError("openCurrentSpaceShareModal failed", error, {
+        spaceId: this.currentSpaceId
+      });
+      this.setNotice(formatErrorMessage(error, "Unable to open space sharing."), "error");
     }
   },
 

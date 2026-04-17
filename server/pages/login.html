@@ -948,22 +948,23 @@
       </section>
 
       <section class="login-panel" aria-label="Login form" data-space-browser-compat-hide-on-fail>
-        <form id="login-form">
-          <label>
-            <span>Username</span>
-            <input id="username" name="username" type="text" autocomplete="username" required />
-          </label>
-          <label>
-            <span>Password</span>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-            />
-          </label>
-          <p id="field-note" class="field-note" hidden>
+        <div id="login-actions">
+          <form id="login-form">
+            <label>
+              <span>Username</span>
+              <input id="username" name="username" type="text" autocomplete="username" required />
+            </label>
+            <label>
+              <span>Password</span>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+            <p id="field-note" class="field-note" hidden>
             Guest account ready, save your credentials.
             <span class="field-note-secondary">
               <svg
@@ -979,15 +980,19 @@
               </svg>
               Guest accounts are temporary and may be removed any time.
             </span>
-          </p>
-          <button id="submit-button" class="secondary-button" type="submit">Enter your Space</button>
-        </form>
-        <div id="guest-option-group">
-          <div class="login-separator">or</div>
-          <button id="guest-create-button" class="primary-button" type="button">
-            Use Guest Account
-          </button>
+            </p>
+            <button id="submit-button" class="secondary-button" type="submit">Enter your Space</button>
+          </form>
+          <div id="guest-option-group">
+            <div class="login-separator">or</div>
+            <button id="guest-create-button" class="primary-button" type="button">
+              Use Guest Account
+            </button>
+          </div>
         </div>
+        <p id="login-disabled-copy" class="field-note" hidden>
+          Login is disabled in this system.
+        </p>
         <div class="login-separator">or</div>
         <button
           id="run-options-button"
@@ -1237,10 +1242,12 @@
       const textEncoder = new TextEncoder();
       const userCryptoModulePromise = import("/pages/res/user-crypto.js");
       const form = document.getElementById("login-form");
+      const loginActions = document.getElementById("login-actions");
       const usernameInput = document.getElementById("username");
       const passwordInput = document.getElementById("password");
       const fieldNote = document.getElementById("field-note");
       const guestOptionGroup = document.getElementById("guest-option-group");
+      const loginDisabledCopy = document.getElementById("login-disabled-copy");
       const submitButton = document.getElementById("submit-button");
       const guestCreateButton = document.getElementById("guest-create-button");
       const runOptionsButton = document.getElementById("run-options-button");
@@ -1255,6 +1262,7 @@
       const statusEl = document.getElementById("status");
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       const allowGuestUsers = readFrontendConfigValue("ALLOW_GUEST_USERS", true);
+      const allowLogin = readFrontendConfigValue("LOGIN_ALLOWED", true);
       const passwordLoginSupported =
         typeof globalThis.crypto?.getRandomValues === "function" &&
         typeof globalThis.crypto?.subtle?.digest === "function" &&
@@ -1309,8 +1317,8 @@
       }
 
       function syncButtonState(isBusy = false) {
-        submitButton.disabled = isBusy || !passwordLoginSupported;
-        guestCreateButton.disabled = isBusy || !allowGuestUsers || !passwordLoginSupported;
+        submitButton.disabled = isBusy || !allowLogin || !passwordLoginSupported;
+        guestCreateButton.disabled = isBusy || !allowLogin || !allowGuestUsers || !passwordLoginSupported;
       }
 
       function setIntroTitlePose(x, y, rotation) {
@@ -1466,7 +1474,7 @@
         submitButton.classList.toggle("primary-button", isGuestReady);
         submitButton.classList.toggle("secondary-button", !isGuestReady);
         fieldNote.hidden = !isGuestReady;
-        guestOptionGroup.hidden = isGuestReady || !allowGuestUsers;
+        guestOptionGroup.hidden = !allowLogin || isGuestReady || !allowGuestUsers;
         syncButtonState(false);
       }
 
@@ -1705,6 +1713,10 @@
         event.preventDefault();
 
         try {
+          if (!allowLogin) {
+            throw new Error("Login is disabled in this system.");
+          }
+
           if (!passwordLoginSupported) {
             throw new Error(getUnsupportedPasswordLoginMessage());
           }
@@ -1813,6 +1825,10 @@
 
       async function handleGuestCreate() {
         try {
+          if (!allowLogin) {
+            throw new Error("Login is disabled in this system.");
+          }
+
           if (!passwordLoginSupported) {
             throw new Error(getUnsupportedPasswordLoginMessage());
           }
@@ -1860,6 +1876,8 @@
         }
       }
 
+      loginActions.hidden = !allowLogin;
+      loginDisabledCopy.hidden = allowLogin;
       form.addEventListener("submit", handleLogin);
       if (allowGuestUsers) {
         guestCreateButton.addEventListener("click", handleGuestCreate);
@@ -1886,7 +1904,7 @@
         prefersReducedMotion.addListener(handleMotionPreferenceChange);
       }
       setGuestCredentials(null);
-      if (!passwordLoginSupported) {
+      if (allowLogin && !passwordLoginSupported) {
         setStatus(getUnsupportedPasswordLoginMessage(), "error");
       }
       if (introAstronaut && !introAstronaut.complete) {

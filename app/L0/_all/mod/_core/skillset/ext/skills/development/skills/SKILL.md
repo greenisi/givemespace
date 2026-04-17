@@ -16,6 +16,7 @@ Use this skill when creating or updating skills for the onscreen chat agent.
 
 Examples:
 
+- `mod/_core/skillset/ext/skills/browser-control/SKILL.md` -> `browser-control`
 - `mod/_core/skillset/ext/skills/development/SKILL.md` -> `development`
 - `mod/_core/skillset/ext/skills/development/modules-routing/SKILL.md` -> `development/modules-routing`
 
@@ -46,7 +47,7 @@ Examples:
 ## Skill Content Rules
 
 - Start with frontmatter containing `name`, `description`, and optional runtime-owned `metadata`.
-- Framework bootstrap already exports exactly one runtime context: `data-runtime="browser"` in normal web sessions or `data-runtime="app"` in the packaged desktop runtime, plus the derived tag `runtime-browser` or `runtime-app`.
+- Framework bootstrap already exports exactly one runtime context: `data-runtime="browser"` in normal web sessions or `data-runtime="app"` in the packaged desktop runtime, plus the derived tag `runtime-browser` or `runtime-app`; packaged app routes derive that from the desktop bridge before falling back to launcher runtime info or frontend config.
 - Import `/mod/_core/framework/js/context.js` when code needs to read the current live `<x-context>` set directly; use `getTags(...)` for tag collection, `getAttributeValues("data-runtime", ...)` for raw runtime reads, and the other helpers for broader context inspection.
 - Use `<x-context>` tags in mounted DOM when a module needs to expose additional live skill-filter state such as `onscreen`, `admin`, `route:spaces`, or `space:open`.
 - Use `metadata.when.tags` when the skill should exist only in those live contexts.

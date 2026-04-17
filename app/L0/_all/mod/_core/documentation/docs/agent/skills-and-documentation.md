@@ -31,7 +31,7 @@ Important rules:
 
 Current first-party context examples:
 
-- framework bootstrap exports exactly one runtime context: `data-runtime="browser"` on normal web sessions or `data-runtime="app"` in the packaged desktop runtime, plus the derived tag `runtime-browser` or `runtime-app`
+- framework bootstrap exports exactly one runtime context: `data-runtime="browser"` on normal web sessions or `data-runtime="app"` in the packaged desktop runtime, plus the derived tag `runtime-browser` or `runtime-app`; packaged app routes resolve that runtime from the desktop bridge before falling back to launcher runtime info or frontend config
 - `_core/onscreen_agent/panel.html` exports `onscreen`
 - `_core/admin/views/shell/shell.html` exports `admin`
 - `_core/router/view.html` exports `route:<current-path>`
@@ -40,6 +40,7 @@ Current first-party context examples:
 Examples:
 
 - `ext/skills/documentation/SKILL.md` -> `documentation`
+- `ext/skills/browser-control/SKILL.md` -> `browser-control`
 - `ext/skills/development/modules-routing/SKILL.md` -> `development/modules-routing`
 
 ## Loading And Visibility
@@ -70,6 +71,7 @@ Conflict rules:
 Current repo-owned shared top-level skills include:
 
 - `development`
+- `browser-control`
 - `memory`
 - `file-download`
 - `pdf-report`
@@ -85,6 +87,8 @@ Some of those first-party ids are still gated by live context tags. For example,
 The first-party `development` tree is intentionally split into narrower nested skills. The top-level `development` skill is the always-included router for that tree: it should stay concise, but it must keep one visible subsection per nested development skill so agents can choose the right follow-up skill quickly.
 
 In particular, `development/modules-routing` now teaches custom routed pages as the main alternative to spaces when the user wants a reusable feature surface, shows how to publish dashboard panels through `ext/panels/*.yaml`, and points agents at the importable helper script `/mod/_core/skillset/ext/skills/development/modules-routing/panel-tools.js` instead of pasting one-off browser snippets into the skill text.
+
+The top-level `browser-control` skill is the focused reference for `_core/web_browsing` runtime control. It teaches the `space.browser` namespace, frontmost-window lookup, per-window handles, `sync()` readiness after navigation, the current browser-frame bridge request types such as `ping`, `dom`, semantic-markdown `content`, `navigation_state_get`, `location_navigate`, `history_back`, `history_forward`, and `location_reload`, and the shared availability stub that returns a warning object in plain browser runtime instead of attempting native-app-only browser actions.
 
 Current first-party panel helper exports include:
 

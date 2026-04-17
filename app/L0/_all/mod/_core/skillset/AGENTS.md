@@ -40,6 +40,7 @@ Update rules:
 This module owns:
 
 - `ext/skills/development/`: the shared first-party frontend development skill tree and its helper scripts, including `modules-routing/panel-tools.js`
+- `ext/skills/browser-control/SKILL.md`: the top-level onscreen skill for controlling floating browser windows through `space.browser`
 - `ext/skills/file-download/SKILL.md`: the top-level onscreen skill for downloading app files, generated files, or external URLs
 - `ext/skills/pdf-report/SKILL.md` plus `ext/skills/pdf-report/pdf-report.js`: the top-level onscreen skill for browser-generated PDF creation and download, plus its generic structured-report and HTML-to-PDF helper
 - `ext/skills/screenshots/SKILL.md` plus `ext/skills/screenshots/screenshots.js`: the top-level onscreen skill for page or element screenshots, plus its browser capture helper
@@ -49,7 +50,7 @@ This module owns:
 
 ## Skill Helper Contract
 
-- this module owns repo-owned shared first-party top-level skills such as `development`, `file-download`, `pdf-report`, `screenshots`, and `user-management`; module-specific skills that describe one module's private contracts may still live under that owning module
+- this module owns repo-owned shared first-party top-level skills such as `development`, `browser-control`, `file-download`, `pdf-report`, `screenshots`, and `user-management`; module-specific skills that describe one module's private contracts may still live under that owning module
 - `skills.js` is the shared owner of the browser-side skill-discovery contract across agent surfaces: skill ids come from `ext/skills/.../SKILL.md`, catalog and auto-loaded prompt discovery both scan only top-level `ext/skills/*/SKILL.md` files, nested skills remain explicit-load-only, live page tags come from `<x-context>` elements in the current document, including the framework-owned runtime context element whose `data-runtime` resolves to `browser` or `app` and whose `data-tags` emits `runtime-browser` or `runtime-app`, `metadata.when` and `metadata.loaded` may each be either `true` or a `{ tags: [...] }` condition, `metadata.when.tags` gates catalog eligibility, `metadata.loaded` controls automatic prompt inclusion after the catalog, and `metadata.placement` routes auto-included or explicitly loaded skill content into system, transient, or history context
 - `metadata.loaded` may be `true` or another `{ tags: [...] }` condition; unset means the skill is only loadable on demand
 - if a skill should auto-load, move, or gate differently, change its `SKILL.md` metadata or owning module path instead of hardcoding that skill id into a prompt builder that already uses shared discovery

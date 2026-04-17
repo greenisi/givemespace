@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="Space Agent" />
+    <meta name="apple-mobile-web-app-title" content="Space Agent" />
+    <meta name="theme-color" content="#050816" />
+    <title>Shared Space | Space Agent</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="/pages/res/space-backdrop.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+        --share-bg: rgba(9, 17, 31, 0.84);
+        --share-border: rgba(148, 167, 201, 0.18);
+        --share-text: #f3f7ff;
+        --share-text-muted: #b8c4da;
+        --share-accent: #94bcff;
+        --share-danger: #ff8d98;
+        --share-success: #7ce4b0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 1.25rem;
+        background: #050816;
+        color: var(--share-text);
+      }
+
+      .share-shell {
+        position: relative;
+        z-index: 1;
+        width: min(28rem, 100%);
+        padding: 1.6rem;
+        border-radius: 1.25rem;
+        border: 1px solid var(--share-border);
+        background: linear-gradient(180deg, rgba(11, 18, 34, 0.92), rgba(7, 13, 24, 0.84));
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
+        backdrop-filter: blur(18px);
+      }
+
+      h1 {
+        margin: 0 0 0.35rem;
+        font-size: clamp(1.8rem, 5vw, 2.4rem);
+        line-height: 1;
+      }
+
+      .share-copy {
+        margin: 0 0 1.25rem;
+        color: var(--share-text-muted);
+        line-height: 1.55;
+      }
+
+      .share-password-prompt {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .share-password-label {
+        display: grid;
+        gap: 0.4rem;
+        color: var(--share-text-muted);
+      }
+
+      .share-password-input {
+        width: 100%;
+        padding: 0.8rem 0.95rem;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(148, 167, 201, 0.2);
+        background: rgba(9, 17, 31, 0.82);
+        color: var(--share-text);
+        font: inherit;
+      }
+
+      .share-password-submit {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border: 0;
+        border-radius: 0.9rem;
+        background: linear-gradient(135deg, rgba(148, 188, 255, 0.96), rgba(125, 220, 255, 0.92));
+        color: #04101d;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .share-password-submit:disabled {
+        opacity: 0.65;
+        cursor: wait;
+      }
+
+      .share-status {
+        margin: 0;
+        color: var(--share-text-muted);
+        line-height: 1.5;
+      }
+
+      .share-status.error {
+        color: var(--share-danger);
+      }
+
+      .share-status.ok {
+        color: var(--share-success);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="space-backdrop" data-space-backdrop aria-hidden="true">
+      <div class="space-backdrop-layer space-backdrop-glow"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-deep"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-far"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-mid"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-near"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-close"></div>
+      <div class="space-backdrop-trails">
+        <div class="space-backdrop-trail" data-space-backdrop-trail></div>
+        <div class="space-backdrop-trail" data-space-backdrop-trail></div>
+      </div>
+    </div>
+
+    <main class="share-shell">
+      <h1>Shared Space</h1>
+      <p class="share-copy">The link opens a temporary guest space so the shared code never runs inside your own user folder.</p>
+
+      <form id="share-password-form" class="share-password-prompt" hidden>
+        <label class="share-password-label">
+          <span>Password</span>
+          <input id="share-password-input" class="share-password-input" type="password" autocomplete="current-password" />
+        </label>
+        <button id="share-password-submit" class="share-password-submit" type="submit">Open Shared Space</button>
+      </form>
+
+      <p id="share-status" class="share-status" role="status" aria-live="polite">Preparing shared space...</p>
+    </main>
+
+    <script src="/pages/res/space-backdrop.js"></script>
+    <script type="module" src="/pages/res/share-space.js"></script>
+  </body>
+</html>

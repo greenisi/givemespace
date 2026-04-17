@@ -33,12 +33,12 @@ Public auth and health endpoints:
 
 Current rules:
 
-- these are the only explicit anonymous endpoints today
-- login uses the shared auth service challenge and proof flow unless runtime config disables password login
+- these are the password-login and health anonymous endpoints; hosted-share endpoints are the other explicit anonymous family
+- login uses the shared auth service challenge and proof flow unless runtime config disables password login through `LOGIN_ALLOWED=false`
 - `login_challenge` also reports `userCrypto` bootstrap state; when a legacy account has no `meta/user_crypto.json`, the challenge includes a one-time provisioning share so the browser can generate the missing wrapped record before final login
 - successful login sets the `space_session` cookie through the auth service, writes the durable session verifier into `L2/<username>/meta/logins.json`, and returns a backend `sessionId` plus the `userCrypto` unlock payload for the authenticated browser session
 - if a legacy account cannot finish `userCrypto` provisioning during login, the server must fail the login instead of issuing the cookie and then forcing a logout
-- `guest_create` creates an `L2` guest user only when runtime config allows guest accounts and must publish the concrete new auth files through the shared mutation path so `user_index` sees the account immediately
+- `guest_create` creates an `L2` guest user only when runtime config allows guest accounts and password login remains enabled, and must publish the concrete new auth files through the shared mutation path so `user_index` sees the account immediately
 - in clustered runtime, login challenges are stored in the primary-only `login_challenge` state area while workers still validate cookies from replicated auth index shards
 
 App-file endpoints:
@@ -81,8 +81,26 @@ Current rules:
 - mutating endpoints should go through `server/runtime/request_mutations.js` so clustered workers perform the local write first, then commit changed logical paths back to the primary once before the response finishes
 - cross-worker follow-up freshness comes from `Space-State-Version` request or response fencing, not from waiting for every worker to acknowledge each write
 
-Module endpoints:
+Hosted share and import endpoints:
 
+- `cloud_share_create`
+- `cloud_share_info`
+- `cloud_share_download`
+- `cloud_share_clone`
+- `space_import`
+
+Current rules:
+
+- `cloud_share_create`, `cloud_share_info`, `cloud_share_download`, and `cloud_share_clone` are explicit anonymous endpoints because custom apps may upload to a separate hosted receiver and share links must open before any session exists
+- `cloud_share_create` accepts the raw ZIP bytes in the request body, stores them under `CUSTOMWARE_PATH/share/spaces/<token>.zip` with matching `<token>.json` metadata, enforces only the `2 MB` size cap plus optional password-encryption metadata validation, and defers ZIP content validation until import or clone time
+- `cloud_share_create` requires both `CLOUD_SHARE_ALLOWED=true` and guest users enabled, and should fail when `CUSTOMWARE_PATH` is not configured because hosted shares are backend-owned server state, not app files
+- `cloud_share_info` returns the stored metadata needed by the public share shell, including whether the share payload is password-encrypted and the KDF or cipher parameters required for client-side decryption
+- `cloud_share_download` returns the raw stored ZIP bytes for a hosted share without unpacking it in the API handler
+- `cloud_share_clone` accepts a ZIP payload that may already have been decrypted in the browser, validates and extracts it into a unique `server/tmp/` directory, creates a fresh guest account, installs the imported space as `imported-N`, updates the share metadata `lastUsedAt`, issues the guest session cookie through the shared auth service, and returns the redirect URL for the new guest session
+- `space_import` is authenticated, accepts a raw ZIP request body, validates the archive through the shared hosted-share helper, and either replaces the current target space or installs a new `imported-N` destination when the caller keeps the current space instead of overwriting it
+- both `cloud_share_clone` and `space_import` must reuse `server/lib/share/service.js` for archive validation, extracted-folder checks, destination naming, and install logic instead of adding endpoint-local ZIP handling
+
+Module endpoints:
 - `module_list`
 - `module_info`
 - `module_install`

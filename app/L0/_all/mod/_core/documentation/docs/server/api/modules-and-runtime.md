@@ -21,15 +21,35 @@ Current public endpoints:
 
 Important notes:
 
-- these are the only explicitly anonymous endpoint families today
-- password login flows through the shared auth challenge/proof service
+- these are the public auth and health endpoints; hosted-share endpoints are the other anonymous family
+- password login flows through the shared auth challenge/proof service when `LOGIN_ALLOWED=true`
 - `login_challenge` also reports `userCrypto` bootstrap state; legacy accounts with no `meta/user_crypto.json` receive a one-time provisioning share so the browser can generate the missing wrapped record before final login, while accounts whose wrapped record no longer has any recoverable server share are reported as `invalidated`
 - `login` completes both the auth session and the `userCrypto` bootstrap: it may persist a missing `user_crypto.json` record before issuing the cookie, and successful responses return a backend `sessionId` plus the `userCrypto` payload needed to unlock the current browser session
-- `guest_create` creates a guest `L2` user only when runtime config allows guest accounts
+- `guest_create` creates a guest `L2` user only when runtime config allows guest accounts and password login remains enabled
 - in clustered runtime, login challenges are coordinated through the primary-only `login_challenge` area of the unified state system while workers still validate cookies and write `logins.json`
 
-## Module Endpoints
+## Hosted Share And Import Endpoints
 
+Current share endpoints:
+
+- `cloud_share_create`
+- `cloud_share_info`
+- `cloud_share_download`
+- `cloud_share_clone`
+- `space_import`
+
+Important behaviors:
+
+- hosted share uploads are anonymous so one Space Agent runtime can upload to a separate hosted receiver
+- `cloud_share_create` stores the raw ZIP under `CUSTOMWARE_PATH/share/spaces/<token>.zip` with matching JSON metadata, rejects payloads over `2 MB`, and intentionally does not unpack or deeply validate the archive at upload time
+- `cloud_share_create` is enabled only when `CLOUD_SHARE_ALLOWED=true`, guest users are enabled, and the receiver has a configured `CUSTOMWARE_PATH`
+- stored share metadata includes the token, create time, last-used time, payload size, and optional browser-side password-encryption parameters
+- `cloud_share_info` returns enough metadata for the public share shell to decide whether it must ask for a password before clone
+- `cloud_share_download` returns the stored ZIP bytes so the browser can decrypt password-protected shares before clone
+- `cloud_share_clone` validates the clear ZIP in a unique `server/tmp/` extraction directory, creates a fresh guest account, installs the result as `imported-N`, issues the guest session cookie, updates the share `lastUsedAt`, and returns the redirect URL for that guest session
+- authenticated `space_import` uses the same archive-validation path for local ZIP imports from the spaces modal, replacing the current space only when the caller explicitly chooses overwrite; otherwise the imported space is renamed to the next `imported-N` destination
+
+## Module Endpoints
 Current module endpoints:
 
 - `module_list`

@@ -76,6 +76,7 @@ Current context helper contract:
 - `js/context.js` owns generic `<x-context>` discovery for the frontend, not just skill filtering
 - stable exports are `getContexts(root?)`, `getAttributeValues(name, root?)`, `getTags(root?)`, and `getContents(root?)` for reading live mounted context elements
 - framework bootstrap uses `resolveRuntimeContext(...)` plus `syncRuntimeContext(...)` to keep exactly one hidden runtime-owned `<x-context>` element mounted with `data-runtime="browser"` or `data-runtime="app"` and `data-tags="runtime-browser"` or `data-tags="runtime-app"`
+- `resolveRuntimeContext(...)` must prefer the packaged desktop bridge on ordinary app routes, fall back to the launcher-shell `space.getRuntimeInfo()` surface when present, and only then use the frontend `SINGLE_USER_APP` config fallback so packaged app pages cannot be mislabeled as browser runtime just because `window.space` is reserved for the normal frontend runtime
 
 Rules:
 

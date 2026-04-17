@@ -472,6 +472,49 @@ export function createAuthService(options = {}) {
     };
   }
 
+  function persistSessionForUser(username, options = {}) {
+    const normalizedUsername = normalizeEntityId(username);
+
+    if (!normalizedUsername) {
+      throw new Error("A username is required to create a session.");
+    }
+
+    const sessionToken = createSessionToken();
+    const sessionId = createSessionId();
+    const sessionVerifier = createSessionVerifier(sessionToken, authKeys);
+    const logins = sanitizeStoredLogins(
+      readUserLogins(projectRoot, normalizedUsername, runtimeParams),
+      normalizedUsername,
+      authKeys
+    );
+
+    logins[sessionVerifier] = createPersistedSessionRecord(
+      {
+        req: options.req,
+        requestInfo: options.requestInfo,
+        sessionId,
+        sessionVerifier,
+        username: normalizedUsername
+      },
+      authKeys
+    );
+
+    writeUserLogins(projectRoot, normalizedUsername, logins, runtimeParams);
+    recordAppPathMutations(
+      {
+        projectRoot,
+        runtimeParams
+      },
+      [`/app/L2/${normalizedUsername}/meta/logins.json`]
+    );
+
+    return {
+      sessionId,
+      sessionToken,
+      username: normalizedUsername
+    };
+  }
+
   function resolveUserFromCookies(cookies = {}, headers = {}) {
     if (isSingleUserApp(runtimeParams)) {
       return createSingleUser();
@@ -657,41 +700,32 @@ export function createAuthService(options = {}) {
       });
     }
 
-    const sessionToken = createSessionToken();
-    const sessionId = createSessionId();
-    const sessionVerifier = createSessionVerifier(sessionToken, authKeys);
-    const logins = sanitizeStoredLogins(
-      readUserLogins(projectRoot, challenge.username, runtimeParams),
-      challenge.username,
-      authKeys
-    );
-
-    logins[sessionVerifier] = createPersistedSessionRecord(
-      {
-        requestInfo: resolvedRequestInfo,
-        sessionId,
-        sessionVerifier,
-        username: challenge.username
-      },
-      authKeys
-    );
-
-    writeUserLogins(projectRoot, challenge.username, logins, runtimeParams);
-    recordAppPathMutations(
-      {
-        projectRoot,
-        runtimeParams
-      },
-      [`/app/L2/${challenge.username}/meta/logins.json`]
-    );
+    const session = persistSessionForUser(challenge.username, {
+      requestInfo: resolvedRequestInfo
+    });
 
     return {
       serverSignature: loginResult.serverSignature,
-      sessionId,
-      sessionToken,
+      sessionId: session.sessionId,
+      sessionToken: session.sessionToken,
       userCrypto: buildLoginUserCryptoPayload(challenge.username),
       username: challenge.username
     };
+  }
+
+  async function issueSessionForUser({ username, req, requestInfo } = {}) {
+    if (isSingleUserApp(runtimeParams)) {
+      return {
+        sessionId: "",
+        sessionToken: "",
+        username: SINGLE_USER_APP_USERNAME
+      };
+    }
+
+    return persistSessionForUser(username, {
+      req,
+      requestInfo
+    });
   }
 
   async function revokeSession(sessionToken, username = "") {
@@ -866,6 +900,7 @@ export function createAuthService(options = {}) {
     getUserCryptoSessionStorageKey,
     getUserIndex,
     initialize,
+    issueSessionForUser,
     revokeSession,
     resolveUserFromCookies
   };

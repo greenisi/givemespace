@@ -38,6 +38,7 @@ Authenticated by default:
 Public:
 
 - `/login`
+- `/share/space/<token>` when guest users are enabled
 - anonymous endpoints that explicitly export `allowAnonymous = true`
 
 Request identity comes from `request_context.js`, which resolves the `space_session` cookie or the single-user runtime override. Authenticated `user_crypto_session_key` requests derive the browser's localStorage wrapping key from that live session's backend `sessionId` plus the server-held session secret.
@@ -58,16 +59,17 @@ Current shells:
 - `admin.html` for `/admin`
 - `login.html` for `/login`
 - `enter.html` for `/enter`
+- `share_space.html` for `/share/space/<token>`
 
 Important shell contracts:
 
 - `/` exposes `body/start` and then `_core/router` takes over
 - `/admin` exposes `page/admin/body/start`, injects `space-max-layer=0`, and then `_core/admin` takes over
 - framework bootstrap also injects `_core/framework/head/end` into `document.head` on `/` and `/admin`, so readable layers can add head-side HTML or inline scripts without changing the server-owned shells
-- `/login` and `/enter` cannot depend on authenticated `/mod/...` assets
-- `/login` and `/enter` keep their mirrored canvas gradient and backdrop scene on fixed viewport layers, so public-shell scrolling moves only the foreground content
+- `/login`, `/enter`, and `/share/space/<token>` cannot depend on authenticated `/mod/...` assets
+- `/login`, `/enter`, and `/share/space/<token>` keep their mirrored canvas gradient and backdrop scene on fixed viewport layers, so public-shell scrolling moves only the foreground content
 - every server-owned shell now declares the shared Space Agent transparent-helmet favicon family with ICO fallback, PNG browser and install icons, Apple touch icon, and app manifest so standard browser tabs, install surfaces, and Apple touch shortcuts use the same badge-free helmet silhouette
-- the shared page titles are `Space Agent`, `Admin Mode | Space Agent`, `Login | Space Agent`, and `Enter Space | Space Agent`
+- the shared page titles are `Space Agent`, `Admin Mode | Space Agent`, `Login | Space Agent`, `Enter Space | Space Agent`, and `Shared Space | Space Agent`
 - every server-owned shell now also declares the same product-level Open Graph and Twitter card, using the title `Space Agent | Browser-First AI Agent Runtime`, the description `Browser-first AI agent runtime for building your own AI spaces, tools, and workflows directly in the browser.`, and the local banner asset `server/pages/res/readme-banner.webp` served publicly at `https://space-agent.ai/pages/res/readme-banner.webp`; keeping that metadata on `/login` too ensures anonymous shares of `https://space-agent.ai/` still resolve to a proper preview after the auth redirect
 - page shells can declare `SPACE_PROJECT_VERSION` for server-side version injection; `/login` and `/enter` both place that resolved version value below a centered footer row of outbound GitHub, Discord, X, and Agent Zero-logo icons
 - `/login` keeps the public run-it-yourself path inside a recovery-safe two-panel modal with `Native App` and `Own Server` choices, a privacy/security subtitle, and one short explanatory line per option; its app action links to `https://github.com/agent0ai/space-agent/releases/latest`, and server hosting links to the README `#host` section
@@ -76,9 +78,12 @@ Important shell contracts:
 - `/login` and `/enter` both run the shared public-shell browser compatibility gate from `server/pages/res/browser-compat.js` before their page logic starts; the gate renders a blocking message when the browser is missing core runtime features such as modern JavaScript syntax, dynamic module loading, fetch, storage, text codecs, or Web Crypto
 - `/login` uses browser Web Crypto for password-login proof generation and `userCrypto` provisioning; when secure-context crypto features are unavailable, the compatibility gate surfaces that missing Web Crypto contract instead of letting raw browser exceptions leak into the shell
 - `/login` also uses the public helper at `server/pages/res/user-crypto.js` to provision or unlock the per-user wrapped browser key as part of the same login transaction; successful sign-in stores the unlocked browser crypto cache in `sessionStorage`, keyed by username plus backend `sessionId`, may store one encrypted `localStorage` blob under `space.userCrypto.local` after fetching the current session-derived wrapping key from `/api/user_crypto_session_key`, stores a session-scoped bootstrap secret when the login started from `userCrypto: missing`, and refuses to redirect when login still reports `userCrypto: missing`; if the first authenticated app boot still cannot recover that missing state, `_core/user_crypto` signs the browser back out so the user does not stay in a half-working app session
+- when `LOGIN_ALLOWED=false`, `/login` keeps the public shell and outbound links but swaps the form for a visible `Login is disabled in this system.` message
+- `/share/space/<token>` is a public share-clone shell that reads hosted-share metadata, prompts for a password when the stored ZIP is browser-encrypted, decrypts that ZIP in the browser, and then asks the backend to validate and clone the clear archive into a fresh guest account
 - server page shells must load runtime resources only from local page assets, inline SVG/CSS, or local `/mod/...` module assets; external URLs in page shells are navigation targets only
 - `/mod/...`, shell HTML, and `server/pages/res/` helper assets now ship with explicit no-store cache headers so a reload picks up source updates instead of reusing stale origin-scoped browser or proxy caches
 - `/logout` is handled by the pages layer and clears the auth cookie before redirecting to `/login`
+- `/share/space/<token>` is handled as an explicit multi-segment public route in `pages_handler.js` instead of the simple single-segment page-file mapping used for `/login` or `/enter`; if guest users are disabled, the route resolves as missing
 - platform-standard root asset URLs such as `/favicon.ico`, `/apple-touch-icon.png`, and `/site.webmanifest` are page-layer aliases into `server/pages/res/`, so public and authenticated shells can share one transparent-helmet favicon contract without separate per-shell exports
 - the page layer also exposes `/robots.txt`, `/llms.txt`, `/llms-full.txt`, and `/sitemap.xml` without authentication from `server/pages/`; `robots.txt` keeps technical and protected routes out of crawler guidance, `sitemap.xml` lists only the intended public entry URLs, and the `llms*.txt` files provide README-derived Space Agent project summaries for LLM-oriented tooling
 

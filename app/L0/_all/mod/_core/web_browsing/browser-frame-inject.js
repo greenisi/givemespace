@@ -13,6 +13,7 @@
   const BRIDGE_NAVIGATION_FLAG = "__spaceBrowserFrameInjectNavigationReady__";
   const BRIDGE_NAVIGATION_EVENTS_FLAG = "__spaceBrowserFrameInjectNavigationEventsReady__";
   const BRIDGE_OPEN_WINDOW_FLAG = "__spaceBrowserFrameInjectOpenWindowReady__";
+  const BRIDGE_CONTENT_FLAG = "__spaceBrowserFrameInjectContentReady__";
   const BRIDGE_PING_FLAG = "__spaceBrowserFrameInjectPingReady__";
   const HISTORY_PATCH_FLAG = "__spaceBrowserFrameInjectHistoryPatchReady__";
 
@@ -401,6 +402,70 @@
       snapshot[selector] = serializeSelectorHtml(selector);
     });
     return snapshot;
+  }
+
+  function getSemanticMarkdownApi() {
+    if (globalThis.htmlToSMD?.convertHtmlToMarkdown) {
+      return globalThis.htmlToSMD;
+    }
+
+    if (typeof htmlToSMD !== "undefined" && htmlToSMD?.convertHtmlToMarkdown) {
+      return htmlToSMD;
+    }
+
+    throw createNamedError(
+      "BrowserFrameBridgeContentUnavailableError",
+      "Browser frame semantic content conversion is unavailable in this runtime.",
+      {
+        code: "browser_frame_content_unavailable"
+      }
+    );
+  }
+
+  function convertHtmlToSemanticContent(html, options = {}) {
+    const normalizedHtml = String(html || "");
+    if (!normalizedHtml.trim()) {
+      return "";
+    }
+
+    try {
+      const semanticMarkdownApi = getSemanticMarkdownApi();
+      const markdown = semanticMarkdownApi.convertHtmlToMarkdown(normalizedHtml, {
+        includeMetaData: options.includeMetaData === "basic" || options.includeMetaData === "extended"
+          ? options.includeMetaData
+          : false,
+        refifyUrls: true,
+        websiteDomain: String(globalThis.location?.origin || "")
+      });
+
+      return typeof markdown === "string" ? markdown.trim() : String(markdown || "");
+    } catch (error) {
+      throw createNamedError(
+        "BrowserFrameBridgeContentError",
+        `Browser frame bridge could not convert "${String(options.target || "document")}" to semantic content.`,
+        {
+          code: "browser_frame_content_error",
+          details: {
+            target: String(options.target || "document")
+          },
+          cause: error
+        }
+      );
+    }
+  }
+
+  function collectSemanticContent(payload = null) {
+    const snapshot = collectDomSnapshot(payload);
+    const content = {};
+
+    Object.entries(snapshot).forEach(([key, html]) => {
+      content[key] = convertHtmlToSemanticContent(html, {
+        includeMetaData: key === "document" ? "basic" : false,
+        target: key
+      });
+    });
+
+    return content;
   }
 
   function readNavigationCapability(key) {
@@ -884,6 +949,16 @@
     return bridge;
   }
 
+  function installContentHandler(bridge) {
+    if (!bridge || bridge[BRIDGE_CONTENT_FLAG]) {
+      return bridge;
+    }
+
+    bridge.handle("content", (payload) => collectSemanticContent(payload));
+    bridge[BRIDGE_CONTENT_FLAG] = true;
+    return bridge;
+  }
+
   function installNavigationHandler(bridge) {
     if (!bridge || bridge[BRIDGE_NAVIGATION_FLAG]) {
       return bridge;
@@ -942,9 +1017,11 @@
   const existingBridge = globalThis[BRIDGE_GLOBAL_KEY];
   const bridge = installNavigationEvents(
     installNavigationHandler(
-      installDomHandler(
-        installPingHandler(
-          installOpenWindowHooks(existingBridge || createBridge())
+      installContentHandler(
+        installDomHandler(
+          installPingHandler(
+            installOpenWindowHooks(existingBridge || createBridge())
+          )
         )
       )
     )

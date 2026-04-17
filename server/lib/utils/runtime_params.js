@@ -399,6 +399,18 @@ function isSingleUserApp(runtimeParams) {
   return Boolean(runtimeParams && typeof runtimeParams.get === "function" && runtimeParams.get("SINGLE_USER_APP"));
 }
 
+function isLoginAllowed(runtimeParams) {
+  if (isSingleUserApp(runtimeParams)) {
+    return false;
+  }
+
+  return Boolean(
+    runtimeParams &&
+      typeof runtimeParams.get === "function" &&
+      runtimeParams.get("LOGIN_ALLOWED", true)
+  );
+}
+
 function areGuestUsersAllowed(runtimeParams) {
   if (isSingleUserApp(runtimeParams)) {
     return false;
@@ -411,6 +423,14 @@ function areGuestUsersAllowed(runtimeParams) {
   );
 }
 
+function isCloudShareAllowed(runtimeParams) {
+  return Boolean(
+    runtimeParams &&
+      typeof runtimeParams.get === "function" &&
+      runtimeParams.get("CLOUD_SHARE_ALLOWED", false)
+  );
+}
+
 export {
   SINGLE_USER_APP_USERNAME,
   areGuestUsersAllowed,
@@ -419,6 +439,8 @@ export {
   formatAllowedValues,
   getStoredParamValue,
   hydrateRuntimeParams,
+  isCloudShareAllowed,
+  isLoginAllowed,
   isSingleUserApp,
   loadParamSpecs,
   normalizeParamName,

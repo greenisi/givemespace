@@ -55,6 +55,7 @@ Important behavior:
 - each stored session record also carries a backend-generated `sessionId`, which the browser uses to bind its session-scoped `userCrypto` cache to the active login
 - unsigned or expired session records are rejected
 - revocation deletes the stored session record and republishes the changed auth file through the shared mutation commit path
+- the auth service also exposes backend-owned trusted session issuance for server-controlled flows such as hosted-share guest clones, so those flows can create a session without pretending to be a password login
 - in clustered runtime, cookie validation happens on workers from replicated auth index shards, one-time login challenges live in the primary-only `login_challenge` area of the unified state system, and any debounced writable-layer Git history scheduling for auth-file writes is triggered only from the primary post-rebuild path
 
 ## User Crypto Contract
@@ -84,6 +85,16 @@ Important rules:
 - authenticated self-service password changes go through `/api/password_change`, which validates the current password against the opened sealed verifier, rewrites `meta/password.json`, rewraps `meta/user_crypto.json` when the current session has unlocked browser crypto, clears `meta/logins.json`, and clears the current browser auth cookie
 - legacy plaintext verifier files are migrated to sealed form during startup; in clustered runtime that initialization stays on the primary before workers begin serving
 - the auth service uses the shared state system for challenge coordination; there is no second in-memory login-challenge path in the runtime
+
+## Login Availability
+
+`LOGIN_ALLOWED` gates only the password-login entry path.
+
+Important rules:
+
+- when `LOGIN_ALLOWED=false`, `/api/login_challenge`, `/api/login`, and `/api/login_check` reject password-login attempts
+- existing authenticated sessions still resolve normally from `space_session`
+- the public `/login` shell remains available, but it swaps the form for disabled-copy fallback so the site can stay open as a non-login landing page
 
 ## Single-User Runtime
 

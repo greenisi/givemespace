@@ -45,6 +45,16 @@
             </div>
 
             <button
+              type="button"
+              class="space-topbar-button space-topbar-button--icon spaces-config-action"
+              aria-label="Share space"
+              title="Share space"
+              @click="void $store.spacesPage.openCurrentSpaceShareModal()"
+            >
+              <x-icon>share</x-icon>
+            </button>
+
+            <button
               x-cloak
               x-show="$store.spacesPage.currentSpace?.widgetIds?.length"
               type="button"

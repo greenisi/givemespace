@@ -37,6 +37,7 @@ Use this skill when the task changes browser runtime behavior, framework-backed 
   - `space.proxy`
   - `space.download`
   - `space.fetchExternal(...)`
+  - `space.browser` for floating browser-window control; load the top-level `browser-control` skill for the detailed method list and browser-frame bridge usage
 
 External browser fetches under the framework should try direct `fetch(...)` first and only fall back to `/api/proxy` after a failed cross-origin attempt; when that fallback succeeds, the runtime keeps an in-memory origin cache so later requests to the same origin go through the backend immediately for the rest of the page lifetime.
 

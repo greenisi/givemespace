@@ -1,4 +1,4 @@
-import { isSingleUserApp } from "../lib/utils/runtime_params.js";
+import { isLoginAllowed, isSingleUserApp } from "../lib/utils/runtime_params.js";
 
 export const allowAnonymous = true;
 
@@ -11,6 +11,10 @@ function createHttpError(message, statusCode) {
 export async function post(context) {
   if (isSingleUserApp(context.runtimeParams)) {
     throw createHttpError("Password login is disabled in single-user mode.", 403);
+  }
+
+  if (!isLoginAllowed(context.runtimeParams)) {
+    throw createHttpError("Login is disabled in this system.", 403);
   }
 
   const payload =

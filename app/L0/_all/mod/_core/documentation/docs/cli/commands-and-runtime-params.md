@@ -177,6 +177,9 @@ Current params:
 - `CUSTOMWARE_PATH`
 - `SINGLE_USER_APP`
 - `ALLOW_GUEST_USERS`
+- `LOGIN_ALLOWED`
+- `CLOUD_SHARE_ALLOWED`
+- `CLOUD_SHARE_URL`
 - `CUSTOMWARE_GIT_HISTORY`
 - `GIT_BACKEND`
 - `GIT_URL`
@@ -199,6 +202,9 @@ Only params with `frontend_exposed: true` are injected into page-shell meta tags
 - `WORKERS`: number of parallel HTTP worker processes for `serve` and `supervise`; `1` keeps the single-process runtime, and larger values start a clustered primary plus worker model with one authoritative replicated state host
 - `SINGLE_USER_APP`: implicit always-authenticated `user` principal with virtual `_admin` access
 - `ALLOW_GUEST_USERS`: enables guest creation from the login screen when password login is enabled
+- `LOGIN_ALLOWED`: enables or disables the password-login endpoints and login form while leaving the public `/login` shell available as a landing page with disabled-copy fallback
+- `CLOUD_SHARE_ALLOWED`: enables the hosted-share receiver endpoints on the server that stores public share archives; defaults to `false` and requires guest users plus `CUSTOMWARE_PATH`
+- `CLOUD_SHARE_URL`: the hosted-share receiver base URL used by the spaces share modal for uploads and by the receiver when generating returned share links; defaults to `share.agent-zero.ai` and is frontend-exposed
 - `CUSTOMWARE_GIT_HISTORY`: enables optional debounced local Git history repositories for writable `L1/<group>/` and `L2/<user>/` roots; defaults to `true`; owner-root commits wait 10 seconds of quiet, then shorten to 5 seconds after 1 minute of pending writes, 1 second after 5 minutes, and immediate commit after 10 minutes; with `WORKERS>1`, those debounced commits are scheduled only by the clustered primary after it rebuilds authoritative state for worker-reported path changes
 - `GIT_BACKEND`: selects the backend used by server-owned Git flows such as local history and Git-backed module installs; defaults to `auto`, which keeps the normal `native -> nodegit -> isomorphic` fallback order, while concrete values force one backend for local testing or troubleshooting
 - `GIT_URL`: optional Git repository URL used by `node space update` and `node space supervise`; if unset they fall back to the local `origin` remote URL and only then to the canonical repo URL

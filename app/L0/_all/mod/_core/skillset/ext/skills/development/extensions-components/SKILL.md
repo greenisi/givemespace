@@ -52,7 +52,7 @@ Example:
 
 ## Context Helper Rules
 
-- Framework bootstrap also injects one hidden runtime `<x-context>` with `data-runtime="browser"` on normal web sessions or `data-runtime="app"` in the packaged desktop runtime; that same element also exposes `runtime-browser` or `runtime-app` through `data-tags`.
+- Framework bootstrap also injects one hidden runtime `<x-context>` with `data-runtime="browser"` on normal web sessions or `data-runtime="app"` in the packaged desktop runtime; packaged app routes derive that from the desktop bridge before falling back to launcher runtime info or frontend config, and that same element also exposes `runtime-browser` or `runtime-app` through `data-tags`.
 - Modules may export additional live skill-filter tags with hidden `<x-context>` elements anywhere in mounted DOM.
 - Set one or more tags with `data-tags="a, b, c"`.
 - Alpine-bound attributes on `<x-context>` are the normal way to keep tags synced with route or store state.

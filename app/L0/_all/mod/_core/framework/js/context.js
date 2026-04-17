@@ -33,6 +33,26 @@ function isBundledAppRuntime(runtimeInfo) {
   return Boolean(runtimeInfo && runtimeInfo.isBundledApp === true);
 }
 
+function isSingleUserAppConfig(frontendConfig) {
+  if (!frontendConfig || typeof frontendConfig !== "object") {
+    return false;
+  }
+
+  if (typeof frontendConfig.get === "function") {
+    return frontendConfig.get("SINGLE_USER_APP", false) === true;
+  }
+
+  if (frontendConfig.values && typeof frontendConfig.values === "object") {
+    return frontendConfig.values.SINGLE_USER_APP === true;
+  }
+
+  return frontendConfig.SINGLE_USER_APP === true;
+}
+
+function hasDesktopBrowserBridge(desktopBrowserApi) {
+  return Boolean(desktopBrowserApi?.available === true);
+}
+
 function toRuntimeTag(runtime) {
   const normalizedRuntime = normalizeTextValue(runtime);
   return normalizedRuntime ? `runtime-${normalizedRuntime}` : "";
@@ -82,8 +102,13 @@ export function getTags(root = globalThis.document) {
 
 export async function resolveRuntimeContext(options = {}) {
   const desktopApi = options.desktopApi ?? globalThis.space;
+  const desktopBrowserApi = options.desktopBrowserApi ?? globalThis.spaceDesktop?.browser;
   const frontendConfig = options.frontendConfig ?? globalThis.space?.config;
-  const packagedFallback = Boolean(desktopApi && frontendConfig?.SINGLE_USER_APP === true);
+  const packagedFallback = isSingleUserAppConfig(frontendConfig);
+
+  if (hasDesktopBrowserBridge(desktopBrowserApi)) {
+    return RUNTIME_CONTEXT.APP;
+  }
 
   if (!desktopApi || typeof desktopApi.getRuntimeInfo !== "function") {
     return packagedFallback ? RUNTIME_CONTEXT.APP : RUNTIME_CONTEXT.BROWSER;

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { isSingleUserApp } from "../lib/utils/runtime_params.js";
+import { areGuestUsersAllowed, isSingleUserApp } from "../lib/utils/runtime_params.js";
 import { runTrackedMutation } from "../runtime/request_mutations.js";
 import { createNoStoreHeaders, sendFile, sendJson, sendNotFound, sendRedirect } from "./responses.js";
 
@@ -31,6 +31,7 @@ const FRONTEND_CONFIG_META_NAME = "space-config";
 const ENTER_GUARD_PLACEHOLDER = "<!-- SPACE_SINGLE_USER_ENTER_GUARD -->";
 const ENTER_GUARD_SCRIPT_TAG = '    <script src="/pages/res/enter-guard.js"></script>';
 const PROJECT_VERSION_PLACEHOLDER = "<!-- SPACE_PROJECT_VERSION -->";
+const SHARE_SPACE_ROUTE_PATTERN = /^\/share\/space\/([A-Za-z0-9]{8})$/u;
 
 function createSessionCleanupHeaders(requestContext, auth) {
   if (
@@ -197,6 +198,31 @@ function resolvePathWithinRoot(rootDir, requestPath) {
   return filePath;
 }
 
+function resolveSharePageRequest(pagesDir, pathname) {
+  const normalizedPath = path.posix.normalize(pathname || "/");
+
+  if (normalizedPath !== "/" && normalizedPath.endsWith("/")) {
+    const trimmedPath = normalizedPath.slice(0, -1);
+
+    if (SHARE_SPACE_ROUTE_PATTERN.test(trimmedPath)) {
+      return {
+        kind: "redirect",
+        location: trimmedPath
+      };
+    }
+  }
+
+  if (!SHARE_SPACE_ROUTE_PATTERN.test(normalizedPath)) {
+    return null;
+  }
+
+  return {
+    filePath: resolvePathWithinRoot(pagesDir, "/share_space.html"),
+    kind: "file",
+    pageName: "share_space.html"
+  };
+}
+
 function resolvePageRequest(pagesDir, pathname) {
   const normalizedPath = path.posix.normalize(pathname || "/");
 
@@ -279,6 +305,34 @@ async function handlePageRequest(res, requestUrl, options = {}) {
 
     sendFile(res, resourceRequest.filePath, {
       headers: createNoStoreHeaders(createSessionCleanupHeaders(requestContext, auth))
+    });
+    return;
+  }
+
+  const sharePageRequest = resolveSharePageRequest(pagesDir, requestUrl.pathname);
+
+  if (sharePageRequest) {
+    if (sharePageRequest.kind === "redirect") {
+      sendRedirect(res, sharePageRequest.location, createSessionCleanupHeaders(requestContext, auth));
+      return;
+    }
+
+    if (!areGuestUsersAllowed(runtimeParams)) {
+      sendNotFound(res, createSessionCleanupHeaders(requestContext, auth));
+      return;
+    }
+
+    if (!sharePageRequest.filePath) {
+      sendNotFound(res, createSessionCleanupHeaders(requestContext, auth));
+      return;
+    }
+
+    await sendPageHtml(res, sharePageRequest.filePath, {
+      headers: createSessionCleanupHeaders(requestContext, auth),
+      pageName: sharePageRequest.pageName,
+      projectVersion: options.projectVersion,
+      requestContext,
+      runtimeParams
     });
     return;
   }

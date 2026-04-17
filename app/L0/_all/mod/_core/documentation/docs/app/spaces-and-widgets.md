@@ -15,6 +15,8 @@ This doc covers the spaces runtime because it is one of the most important agent
 - `app/L0/_all/mod/_core/spaces/ext/skills/spaces/SKILL.md`
 - `app/L0/_all/mod/_core/spaces/storage.js`
 - `app/L0/_all/mod/_core/spaces/store.js`
+- `app/L0/_all/mod/_core/spaces/space-share-modal.js`
+- `app/L0/_all/mod/_core/spaces/space-share-modal.html`
 
 ## Storage Layout
 
@@ -41,7 +43,20 @@ Important rules:
 - `readSpace(spaceId)` should reuse that fresh list snapshot when possible; otherwise it should list the widget folder once, run legacy `.js` migration against that same listing, relist only if migration changed the folder, and batch-read the manifest plus YAML widgets together instead of rediscovering widget files repeatedly
 - the removable `_core/spaces/thumbnail_experiment/` helper owns the current testing path for dashboard card thumbnails; it should stay browser-only, write the thumbnail file under the space root, prefer `thumbnail.webp`, fall back to `thumbnail.jpg`, crop toward visible widget bounds instead of empty canvas, target a roughly `200x200` square image, delete stale thumbnail files when a space no longer has visible widget content to capture, and refresh thumbnails from the shared current-space post-save reload path instead of depending on onboarding-specific helper branches
 - space title and agent-instruction edits are draft-first in the current-space header popover and should flush on blur, panel close, route change, or unmount rather than persisting on every keystroke
-- while a current space is open, `_core/spaces` defines its Back, title-toggle, Rearrange, and widget-dismiss controls directly inside the spaces route and injects them into the menu shell's existing `[id="_core/onscreen_menu/bar_start"]` container through `x-inject` instead of rendering a separate fixed in-canvas overlay; normal spaces keep the icon-only trash dismiss action and still confirm before clearing, but spaces whose current widgets all carry `metadata.example: true` swap that control to a labeled `Close example` button with a close icon that closes immediately
+- while a current space is open, `_core/spaces` defines its Back, title-toggle, Share, Rearrange, and widget-dismiss controls directly inside the spaces route and injects them into the menu shell's existing `[id="_core/onscreen_menu/bar_start"]` container through `x-inject` instead of rendering a separate fixed in-canvas overlay; normal spaces keep the icon-only trash dismiss action and still confirm before clearing, but spaces whose current widgets all carry `metadata.example: true` swap that control to a labeled `Close example` button with a close icon that closes immediately
+
+## Share Modal
+
+The current-space share button opens a spaces-owned modal that keeps local import and export separate from optional hosted sharing.
+
+Current behaviors:
+
+- `Download ZIP` always exports the current `~/spaces/<spaceId>/` folder as a ZIP archive
+- `Upload ZIP` always validates through the backend import endpoint; if the current space already has meaningful content, the modal asks whether to overwrite that current space or keep it and import as a new `imported-N` space
+- imported destinations ignore the incoming archive id or title for naming; non-overwrite imports are always installed as `imported-1`, `imported-2`, and so on
+- when `CLOUD_SHARE_URL` resolves to a base URL, the same modal can also upload the current space ZIP to that hosted receiver and return a share link
+- the hosted-share branch can optionally encrypt the ZIP in the browser with a password before upload, using the same public `share-crypto` helper as the public share-open page
+- local ZIP export and import stay available even when hosted sharing is disabled or the remote receiver rejects uploads
 
 ## Runtime Namespaces
 
@@ -76,6 +91,7 @@ Frequently used `space.spaces` helpers:
 - `upsertWidgets({ widgets, ... })`
 - `patchWidget(...)`
 - `renderWidget(...)`
+- `openShareModal(options?)`
 
 Widget YAML rules:
 

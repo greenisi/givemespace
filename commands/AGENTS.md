@@ -96,8 +96,11 @@ Runtime resolution rules:
 - stored `.env` parameter values win over process environment variables
 - process environment variables win over the schema `default`
 - only parameters with `frontend_exposed: true` are injected into page shells for frontend reads
-- `CUSTOMWARE_PATH`, when non-empty, is the parent directory that contains backend `L1/` and `L2/` writable roots
+- `CUSTOMWARE_PATH`, when non-empty, is the parent directory that contains backend `L1/` and `L2/` writable roots and backend-owned hosted share archives under `share/spaces/` when cloud-share receiving is enabled
 - `WORKERS` sets the number of HTTP worker processes for `serve` and `supervise`; `1` keeps the single-process runtime
+- `LOGIN_ALLOWED` enables or disables password-login endpoints and the `/login` form while leaving the public shell available; it defaults to `true` and is frontend-exposed
+- `CLOUD_SHARE_ALLOWED` enables hosted cloud-share uploads on the receiving server; it defaults to `false` and depends on guest users plus `CUSTOMWARE_PATH`
+- `CLOUD_SHARE_URL` tells browser clients which hosted share receiver to use and which base URL should be returned in generated share links; it defaults to `share.agent-zero.ai` and is frontend-exposed
 - `CUSTOMWARE_GIT_HISTORY` enables optional adaptive-debounced per-owner local Git history repositories for writable `L1` and `L2` roots; it defaults to `true`
 - `GIT_BACKEND` defaults to `auto` and selects the backend used by server-owned Git flows such as local history and Git-backed module installs; `auto` keeps the default `native -> nodegit -> isomorphic` fallback order
 - `USER_FOLDER_SIZE_LIMIT_BYTES` sets an optional byte cap for each on-disk `L2/<user>/` folder; `0` disables the cap

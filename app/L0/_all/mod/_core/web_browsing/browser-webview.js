@@ -1,7 +1,11 @@
 const DEFAULT_WEBVIEW_PARTITION_PREFIX = "space-browser-";
+const BROWSER_FRAME_INJECT_PRELUDE_PATHS = Object.freeze([
+  "/mod/_core/web_browsing/vendor/dom-to-semantic-markdown.min.js"
+]);
 const WEBVIEW_SHADOW_STYLE_ATTRIBUTE = "data-space-browser-webview-style";
 const WEBVIEW_EMBEDDER_FRAME_SELECTOR = "iframe, embed, object, browserplugin";
 
+const sourceTextCache = new Map();
 const injectSourceCache = new Map();
 const shadowObserverCache = new WeakMap();
 
@@ -249,6 +253,33 @@ function callWebviewMethod(webview, methodName, fallback = null) {
   }
 }
 
+async function fetchSourceText(scriptPath) {
+  const normalizedScriptPath = normalizeInjectPath(scriptPath);
+  if (sourceTextCache.has(normalizedScriptPath)) {
+    return sourceTextCache.get(normalizedScriptPath);
+  }
+
+  const loadPromise = (async () => {
+    const response = await globalThis.fetch(normalizedScriptPath, {
+      credentials: "same-origin"
+    });
+    if (!response.ok) {
+      throw new Error(`Desktop browser webview injection could not load ${normalizedScriptPath} (${response.status}).`);
+    }
+
+    return response.text();
+  })();
+
+  sourceTextCache.set(normalizedScriptPath, loadPromise);
+
+  try {
+    return await loadPromise;
+  } catch (error) {
+    sourceTextCache.delete(normalizedScriptPath);
+    throw error;
+  }
+}
+
 async function fetchInjectSource(injectPath) {
   const normalizedInjectPath = normalizeInjectPath(injectPath);
   if (injectSourceCache.has(normalizedInjectPath)) {
@@ -256,14 +287,15 @@ async function fetchInjectSource(injectPath) {
   }
 
   const loadPromise = (async () => {
-    const response = await globalThis.fetch(normalizedInjectPath, {
-      credentials: "same-origin"
-    });
-    if (!response.ok) {
-      throw new Error(`Desktop browser webview injection could not load ${normalizedInjectPath} (${response.status}).`);
-    }
+    const sources = await Promise.all([
+      ...BROWSER_FRAME_INJECT_PRELUDE_PATHS.map((scriptPath) => fetchSourceText(scriptPath)),
+      fetchSourceText(normalizedInjectPath)
+    ]);
 
-    return response.text();
+    return sources
+      .map((source) => String(source || "").trim())
+      .filter(Boolean)
+      .join("\n\n");
   })();
 
   injectSourceCache.set(normalizedInjectPath, loadPromise);

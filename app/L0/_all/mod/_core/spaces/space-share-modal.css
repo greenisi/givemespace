@@ -1,0 +1,133 @@
+.space-share-modal-shell {
+  width: min(42rem, calc(100vw - 2rem));
+  max-width: 100%;
+}
+
+.space-share-modal-body {
+  color: var(--color-text-primary);
+}
+
+.space-share-modal {
+  display: grid;
+  gap: 1rem;
+}
+
+.space-share-modal-lead {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.space-share-modal-eyebrow,
+.space-share-modal-card-eyebrow,
+.space-share-modal-result-label,
+.space-share-modal-field-label {
+  margin: 0;
+  color: rgba(232, 240, 255, 0.68);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.space-share-modal-heading,
+.space-share-modal-card-title {
+  margin: 0;
+}
+
+.space-share-modal-heading {
+  font-size: clamp(1.25rem, 2.1vw, 1.55rem);
+}
+
+.space-share-modal-copy,
+.space-share-modal-card-copy,
+.space-share-modal-status,
+.space-share-modal-error {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.space-share-modal-copy,
+.space-share-modal-card-copy,
+.space-share-modal-status {
+  color: var(--color-text-secondary);
+}
+
+.space-share-modal-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.space-share-modal-card,
+.space-share-modal-result {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 167, 201, 0.16);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at top left, rgba(148, 188, 255, 0.12), transparent 42%),
+    rgba(8, 14, 26, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.space-share-modal-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.space-share-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.8rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid var(--space-chrome-border);
+  border-radius: 12px;
+  background: rgba(11, 18, 34, 0.44);
+  color: var(--color-text-primary);
+  font: inherit;
+  line-height: 1.45;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.space-share-modal-input:hover,
+.space-share-modal-input:focus {
+  border-color: var(--space-chrome-border-strong);
+  background: rgba(14, 22, 36, 0.68);
+  box-shadow: 0 0 0 3px rgba(148, 188, 255, 0.12);
+}
+
+.space-share-modal-input--result {
+  min-width: 0;
+}
+
+.space-share-modal-action {
+  width: 100%;
+  justify-content: center;
+}
+
+.space-share-modal-result-row {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+}
+
+.space-share-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.space-share-modal-error {
+  color: #ff8d98;
+}
+
+@media (max-width: 720px) {
+  .space-share-modal-result-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
