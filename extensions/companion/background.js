@@ -101,44 +101,57 @@ const HANDLERS = {
     return { dataUrl };
   },
 
-  // Open URL in an OFFSCREEN Chrome popup window — chromeless, unfocused,
-  // positioned far outside the visible viewport so the user only sees the
-  // page through the inline screenshot preview the GiveMeSpace web app
-  // paints. captureVisibleTab still works on this window because the popup
-  // has exactly one tab in foreground state inside its own window context.
-  // We never bring the popup to front unless the user explicitly clicks
-  // "Open page ↗" in the preview toolbar.
+  // Open URL in a Chrome popup window. By default the GiveMeSpace web app
+  // passes screen-pixel left/top/width/height that match the browser-frame
+  // surface inside the GMS tab — so the popup visually overlays the GMS
+  // frame area and the page appears "inside" the app. Caller may also
+  // request offscreen placement for headless screenshot streams (NB:
+  // truly off-screen positions break captureVisibleTab; only useful for
+  // negative coords that are still on a connected display).
   create_popup_window: async ({
     url,
     width = 1280,
     height = 800,
-    offscreen = true
+    left,
+    top,
+    focused = false,
+    offscreen = false
   } = {}) => {
     if (!url || typeof url !== "string") {
       throw new Error("create_popup_window: 'url' is required");
     }
-    // Top: 99999, left: 99999 — past any reasonable display, so even on
-    // multi-monitor setups Chrome clamps it to a bottom-right corner that
-    // requires deliberate effort to locate. macOS often clamps to the
-    // rightmost screen edge but the window stays out of the user's
-    // primary attention. Browser keeps it as a real window so screenshots
-    // work.
-    const params = {
-      url,
-      type: "popup",
-      width,
-      height,
-      focused: false
-    };
+    const params = { url, type: "popup", width, height, focused };
     if (offscreen) {
-      params.left = 99999;
-      params.top = 99999;
+      // -10 left of the visible display: still in the compositor (so
+      // captureVisibleTab works) but pushed slightly off the user's
+      // primary screen. Use only when caller explicitly asks for it.
+      params.left = -Math.max(width - 10, 100);
+      params.top = 0;
+    } else {
+      if (typeof left === "number") params.left = Math.round(left);
+      if (typeof top === "number") params.top = Math.round(top);
     }
     const win = await chrome.windows.create(params);
     return {
       windowId: win.id,
       tabId: win.tabs?.[0]?.id || null
     };
+  },
+
+  // Re-position / resize an existing popup window. Used when the GMS browser
+  // surface is moved or resized so the popup tracks it.
+  reposition_window: async ({ windowId, left, top, width, height } = {}) => {
+    if (typeof windowId !== "number") {
+      throw new Error("reposition_window: numeric 'windowId' is required");
+    }
+    const params = {};
+    if (typeof left === "number") params.left = Math.round(left);
+    if (typeof top === "number") params.top = Math.round(top);
+    if (typeof width === "number") params.width = Math.round(width);
+    if (typeof height === "number") params.height = Math.round(height);
+    if (Object.keys(params).length === 0) return { windowId };
+    await chrome.windows.update(windowId, params);
+    return { windowId, ...params };
   },
 
   // Screenshot a specific window (the popup we created above). Tab inside

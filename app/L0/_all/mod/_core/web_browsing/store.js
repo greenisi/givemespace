@@ -2464,11 +2464,17 @@ const model = {
     if (!available) {
       return false;
     }
+    const placement = this.computeCompanionPlacement(id);
     const existingTabId = browserSurface.companionTabId;
     const existingWindowId = browserSurface.companionWindowId;
     if (existingTabId && existingWindowId) {
       try {
         await bridge.companion.navigate(normalizedUrl, existingTabId);
+        if (placement) {
+          try {
+            await bridge.companion.repositionWindow(existingWindowId, placement);
+          } catch {}
+        }
         this.scheduleCompanionPreview(id);
         return true;
       } catch {
@@ -2479,7 +2485,8 @@ const model = {
     }
     try {
       const created = await bridge.companion.createPopupWindow(normalizedUrl, {
-        focused: false
+        focused: false,
+        ...(placement || {})
       });
       if (created?.tabId) {
         browserSurface.companionTabId = created.tabId;
@@ -2491,6 +2498,35 @@ const model = {
       return false;
     }
     return false;
+  },
+
+  // Compute screen-pixel coords of the browser-frame iframe inside this
+  // GiveMeSpace tab. The Companion places the popup window at exactly these
+  // coords so the page appears overlaid inside the GMS frame area.
+  computeCompanionPlacement(id) {
+    if (typeof globalThis.window === "undefined") return null;
+    const iframe = this.getIframe(id);
+    if (!iframe || typeof iframe.getBoundingClientRect !== "function") return null;
+    const rect = iframe.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const screenX = Number.isFinite(globalThis.window.screenX)
+      ? globalThis.window.screenX
+      : 0;
+    const screenY = Number.isFinite(globalThis.window.screenY)
+      ? globalThis.window.screenY
+      : 0;
+    // Outer browser chrome adds height between window top and viewport top.
+    // Approximate via outerHeight - innerHeight.
+    const chromeOffsetY =
+      Number.isFinite(globalThis.window.outerHeight) &&
+      Number.isFinite(globalThis.window.innerHeight)
+        ? Math.max(0, globalThis.window.outerHeight - globalThis.window.innerHeight)
+        : 0;
+    const left = Math.max(0, Math.round(screenX + rect.left));
+    const top = Math.max(0, Math.round(screenY + chromeOffsetY + rect.top));
+    const width = Math.max(400, Math.round(rect.width));
+    const height = Math.max(300, Math.round(rect.height));
+    return { left, top, width, height };
   },
 
   // After a Companion navigation, wait for the page to render then start a

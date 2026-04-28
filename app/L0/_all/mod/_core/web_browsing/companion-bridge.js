@@ -96,6 +96,7 @@ export const companion = {
   type: (ref, value, tabId) => cmd("type", { ref, value, tabId }),
   screenshot: (opts = {}) => cmd("screenshot", opts),
   createPopupWindow: (url, opts = {}) => cmd("create_popup_window", { url, ...opts }),
+  repositionWindow: (windowId, opts = {}) => cmd("reposition_window", { windowId, ...opts }),
   screenshotWindow: (windowId, opts = {}) => cmd("screenshot_window", { windowId, ...opts }),
   focusWindow: (windowId) => cmd("focus_window", { windowId }),
   closeWindow: (windowId) => cmd("close_window", { windowId })
