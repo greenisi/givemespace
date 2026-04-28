@@ -14,7 +14,7 @@ The GiveMeSpace Companion is built specifically to pass CWS review on first subm
 | `debugger` permission | Not requested. We don't use CDP. |
 | Hidden background activity | The service worker only fires in response to `chrome.runtime.onMessage` from our content script. No `chrome.alarms`, no periodic polling. |
 | Content scripts on `<all_urls>` | Content script matches restricted to `givemespace.ai` + `localhost:3000` only. |
-| `externally_connectable` accepting arbitrary origins | Set to `{ matches: [] }` — deny all external runtime messaging. |
+| `externally_connectable` accepting arbitrary origins | Key omitted entirely — that's the default-deny behavior. (Empty `matches: []` is rejected at load time as a manifest error.) |
 | No privacy policy | `extensions/companion/PRIVACY.md` shipped + linked from popup. |
 | Permissions request without user gesture | All `chrome.permissions.request` calls happen inside a popup button click handler (verified user gesture). |
 
