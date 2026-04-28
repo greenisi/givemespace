@@ -2422,7 +2422,18 @@ const model = {
 
     if (!payload) {
       const companionHandled = await this.tryCompanionNavigate(id, nextUrl);
-      if (!companionHandled) {
+      if (companionHandled) {
+        // Keep the iframe on the placeholder (which renders the picker
+        // + Companion overlay + Cloud iframe). Without this reset the
+        // iframe would still have src=<userURL> from the state mutation
+        // above, triggering an X-Frame-Options blocked load and a
+        // broken-image icon for any non-iframable site (Google, banks,
+        // every modern SPA).
+        const placeholderUrl = "/mod/_core/web_browsing/browser-frame.html";
+        if (browserSurface.frameSrc !== placeholderUrl) {
+          browserSurface.frameSrc = placeholderUrl;
+        }
+      } else {
         this.performNavigateFallback(id, nextUrl);
       }
     }
