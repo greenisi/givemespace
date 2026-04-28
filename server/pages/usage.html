@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Usage — GiveMeSpace</title>
+<link rel="icon" href="/pages/res/favicon.ico" />
+<style>
+  :root {
+    --bg: #050816;
+    --fg: #f5f7fb;
+    --muted: #94a3b8;
+    --accent: #59f0a8;
+    --warn: #fbbf24;
+    --danger: #ef4444;
+    --border: rgba(148, 163, 184, 0.18);
+  }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 64px 24px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 32px; font-size: 14px; }
+  .card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 22px;
+    margin-bottom: 20px;
+  }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .big { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; margin: 6px 0 0; }
+  .bar-track { height: 10px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; margin: 14px 0 6px; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 240ms ease; }
+  .bar-fill.warn { background: var(--warn); }
+  .bar-fill.danger { background: var(--danger); }
+  .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+  .tier-pill {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    background: rgba(89, 240, 168, 0.12); color: var(--accent);
+    border: 1px solid rgba(89, 240, 168, 0.4);
+  }
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;
+  }
+  .stat { padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; }
+  .stat .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .err { color: var(--danger); }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Usage</h1>
+  <p class="sub">Your monthly token allowance and recent activity.</p>
+
+  <div class="card" id="quotaCard">
+    <div class="row">
+      <span class="label">Plan</span>
+      <span class="tier-pill" id="tierPill">…</span>
+    </div>
+    <div class="big" id="usedDisplay">Loading…</div>
+    <div class="bar-track"><div class="bar-fill" id="barFill" style="width: 0%"></div></div>
+    <div class="meta">
+      <span id="usedTokensLabel">— used</span>
+      <span id="resetLabel">resets in —</span>
+    </div>
+    <div class="grid">
+      <div class="stat">
+        <div class="label">Allowance</div>
+        <div class="v" id="allowanceVal">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Remaining</div>
+        <div class="v" id="remainingVal">—</div>
+      </div>
+    </div>
+    <div class="hint" id="modelsLine"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Models on your plan</div>
+    <div id="modelsList" style="margin-top: 10px;"></div>
+  </div>
+
+  <p class="hint">
+    <a href="/#/dashboard">← Back to GiveMeSpace</a>
+  </p>
+</main>
+
+<script type="module">
+  const fmt = new Intl.NumberFormat("en-US");
+  const tierPill = document.getElementById("tierPill");
+  const usedDisplay = document.getElementById("usedDisplay");
+  const barFill = document.getElementById("barFill");
+  const usedTokensLabel = document.getElementById("usedTokensLabel");
+  const resetLabel = document.getElementById("resetLabel");
+  const allowanceVal = document.getElementById("allowanceVal");
+  const remainingVal = document.getElementById("remainingVal");
+  const modelsList = document.getElementById("modelsList");
+
+  function humanizeMs(ms) {
+    if (ms <= 0) return "now";
+    const days = Math.floor(ms / 86_400_000);
+    const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+    if (days >= 1) return `${days}d ${hours}h`;
+    const minutes = Math.floor((ms % 3_600_000) / 60_000);
+    return `${hours}h ${minutes}m`;
+  }
+
+  async function refresh() {
+    try {
+      const resp = await fetch("/api/llm_usage", { credentials: "include" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const q = await resp.json();
+      tierPill.textContent = q.tier || "—";
+      const allowance = q.allowance;
+      const used = q.used || 0;
+      const remaining = q.remaining;
+      const isUnlimited = allowance === null || allowance === undefined;
+      if (isUnlimited) {
+        usedDisplay.textContent = "Unlimited";
+        barFill.style.width = "0%";
+        usedTokensLabel.textContent = `${fmt.format(used)} tokens used`;
+        allowanceVal.textContent = "Unlimited";
+        remainingVal.textContent = "—";
+      } else {
+        const pct = allowance > 0 ? Math.min(100, (used / allowance) * 100) : 0;
+        usedDisplay.textContent = `${pct.toFixed(1)}% used`;
+        barFill.style.width = `${pct}%`;
+        barFill.classList.remove("warn", "danger");
+        if (pct >= 90) barFill.classList.add("danger");
+        else if (pct >= 70) barFill.classList.add("warn");
+        usedTokensLabel.textContent = `${fmt.format(used)} of ${fmt.format(allowance)} tokens`;
+        allowanceVal.textContent = fmt.format(allowance);
+        remainingVal.textContent = fmt.format(remaining);
+      }
+      const resetMs = (q.resetAtMs || 0) - Date.now();
+      resetLabel.textContent = `resets in ${humanizeMs(resetMs)}`;
+
+      modelsList.innerHTML = "";
+      (q.modelsAllowed || []).forEach((m) => {
+        const chip = document.createElement("span");
+        chip.textContent = m;
+        chip.style.cssText = "display: inline-block; margin: 4px 6px 4px 0; padding: 4px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; font: 500 12px/1.2 system-ui;";
+        modelsList.appendChild(chip);
+      });
+    } catch (err) {
+      tierPill.textContent = "error";
+      usedDisplay.textContent = "Couldn't load usage.";
+      usedDisplay.classList.add("err");
+      usedTokensLabel.textContent = String(err?.message || err);
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 15_000);
+</script>
+</body>
+</html>
