@@ -669,10 +669,10 @@
       //   - cloud     : Headless Chromium video stream via Steel.dev (Pro)
       //   - desktop   : Native Electron app (always Free, separate download)
       // Choice persists in localStorage so it survives reloads. Other
-      // modules in the GMS app read window.localStorage.getItem("gms.browserMode")
+      // modules in the GMS app read window.localStorage.getItem("gms.browserMode.v2")
       // when deciding whether to spawn the Companion popup.
       (function initModePicker() {
-        const STORAGE_KEY = "gms.browserMode";
+        const STORAGE_KEY = "gms.browserMode.v2";
         const VALID_MODES = new Set(["companion", "cloud", "desktop"]);
         const chips = document.querySelectorAll("[data-mode]");
         const bodies = document.querySelectorAll("[data-mode-body]");
@@ -704,7 +704,7 @@
           // spawn the Companion popup on the next URL submit.
           try {
             globalThis.parent?.postMessage(
-              { type: "gms.browserMode", mode },
+              { type: "gms.browserMode.v2", mode },
               "*"
             );
           } catch {}

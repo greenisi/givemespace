@@ -2470,7 +2470,7 @@ const model = {
     //   desktop         — Direct user to the desktop app.
     let mode = "cloud";
     try {
-      const stored = String(globalThis.localStorage?.getItem("gms.browserMode") || "");
+      const stored = String(globalThis.localStorage?.getItem("gms.browserMode.v2") || "");
       if (stored === "companion" || stored === "desktop") mode = stored;
     } catch {}
 
