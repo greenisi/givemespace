@@ -4,7 +4,9 @@ The "Cloud browser · Pro" picker chip in every browser surface is backed by [St
 
 ## Why Steel (not Browserbase)
 
-Both ship a managed Chromium. Browserbase's "live view" URL is hosted at `browserbase.com` with `X-Frame-Options: SAMEORIGIN`, which means we cannot iframe it inside GiveMeSpace — defeating the whole "rendered inside the app" requirement. Steel ships a `sessionViewerUrl` explicitly designed for embedding. (Custom video streams via CDP/WebSocket would work for Browserbase, but that's a 2‑week build vs. Steel's hours.)
+Both ship a managed Chromium. Steel exposes a `debugUrl` that's an **unauthenticated WebRTC stream endpoint** at `api.steel.dev/v1/sessions/{id}/player` ([docs](https://docs.steel.dev/overview/sessions-api/embed-sessions/live-sessions)) — we iframe it with `?interactive=true&showControls=false&theme=dark` and the user sees a real browser rendered inline, no Steel branding, no auth wall.
+
+Browserbase's equivalent live‑view URL is hosted at `browserbase.com` with `X-Frame-Options: SAMEORIGIN`, blocking the embed. Their `sessionViewerUrl` (and Steel's, for that matter — same URL pattern, served from `app.steel.dev`) is the auth‑walled dashboard meant for the API key holder, NOT for embedding to end users. Iframing it shows a "Sign in with Google/GitHub" gate, which violates the client‑tool‑abstraction rule.
 
 If you'd rather use a different provider, swap the body of `server/lib/saas/cloud_browser.js` — the rest of the stack only depends on the `{ sessionId, viewerUrl }` shape.
 

@@ -56,9 +56,25 @@ export async function createCloudSession({ initialUrl, region } = {}) {
   }
 
   const data = await resp.json();
+  // The right URL to embed is `debugUrl` (unauthenticated WebRTC stream
+  // endpoint, per Steel docs:
+  // https://docs.steel.dev/overview/sessions-api/embed-sessions/live-sessions).
+  // `sessionViewerUrl` is the auth-walled dashboard for Steel account
+  // holders — embedding that shows users a "Sign in to Steel" gate,
+  // which violates our client-tool-abstraction rule.
+  // Query params: interactive=true (click/type), showControls=false +
+  // theme=dark (hide Steel's chrome on the legacy headless path).
+  let viewerUrl = null;
+  if (data.debugUrl) {
+    const u = new URL(data.debugUrl);
+    u.searchParams.set("interactive", "true");
+    u.searchParams.set("showControls", "false");
+    u.searchParams.set("theme", "dark");
+    viewerUrl = u.toString();
+  }
   return {
     sessionId: data.id,
-    viewerUrl: data.sessionViewerUrl || data.debugUrl || null,
+    viewerUrl,
     websocketUrl: data.websocketUrl || null,
     expiresAt: data.expiresAt || null,
     raw: data
