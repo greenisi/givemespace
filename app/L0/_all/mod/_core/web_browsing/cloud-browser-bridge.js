@@ -6,15 +6,15 @@
 // UI can show "Configure STEEL_API_KEY" (503), "Upgrade to Pro" (402),
 // or generic failure messaging.
 
-const ENDPOINT = "/api/cloud_browser_session";
+const SESSION_ENDPOINT = "/api/cloud_browser_session";
+const RELEASE_ENDPOINT = "/api/cloud_browser_release";
 
-export async function createCloudSession({ url } = {}) {
-  const body = url ? { url } : {};
-  const resp = await fetch(ENDPOINT, {
+async function postJson(endpoint, body) {
+  const resp = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(body)
+    body: JSON.stringify(body || {})
   });
   let data = null;
   try {
@@ -29,4 +29,13 @@ export async function createCloudSession({ url } = {}) {
     throw err;
   }
   return data;
+}
+
+export async function createCloudSession({ url } = {}) {
+  return postJson(SESSION_ENDPOINT, url ? { url } : {});
+}
+
+export async function releaseCloudSession({ sessionId } = {}) {
+  if (!sessionId) return { released: false };
+  return postJson(RELEASE_ENDPOINT, { sessionId });
 }

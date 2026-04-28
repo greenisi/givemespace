@@ -9,6 +9,7 @@
 
 import { createCloudSession, isCloudBrowserConfigured } from "../lib/saas/cloud_browser.js";
 import { getDb, upsertUser, getUser } from "../lib/saas/db.js";
+import { getRuntimeGroupIndex } from "../lib/customware/group_runtime.js";
 
 function readPayload(context) {
   return context.body && typeof context.body === "object" && !Buffer.isBuffer(context.body)
@@ -16,9 +17,17 @@ function readPayload(context) {
     : {};
 }
 
+function readUserGroups(context) {
+  const username = String(context.user?.username || "").trim();
+  if (!username) return [];
+  const groupIndex = getRuntimeGroupIndex(context.watchdog, context.runtimeParams);
+  if (!groupIndex || typeof groupIndex.getOrderedGroupsForUser !== "function") return [];
+  const groups = groupIndex.getOrderedGroupsForUser(username);
+  return Array.isArray(groups) ? groups : [];
+}
+
 function isAdmin(context) {
-  const groups = Array.isArray(context.user?.groups) ? context.user.groups : [];
-  return groups.includes("_admin");
+  return readUserGroups(context).includes("_admin");
 }
 
 function userTier(context) {

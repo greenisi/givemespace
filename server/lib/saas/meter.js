@@ -12,6 +12,7 @@ import {
   getTokensUsedInWindow
 } from "./db.js";
 import { getTierConfig, priceMicros, WINDOW_MS } from "./pricing.js";
+import { getRuntimeGroupIndex } from "../customware/group_runtime.js";
 
 // Make sure the user has a row before we read/write usage. Idempotent.
 function ensureUserRow(db, context) {
@@ -21,9 +22,13 @@ function ensureUserRow(db, context) {
     err.statusCode = 401;
     throw err;
   }
-  const isAdmin = Array.isArray(context.user?.groups)
-    ? context.user.groups.includes("_admin")
-    : false;
+  // Groups live in the runtime group index, not on context.user.
+  let isAdmin = false;
+  try {
+    const groupIndex = getRuntimeGroupIndex(context.watchdog, context.runtimeParams);
+    const groups = groupIndex?.getOrderedGroupsForUser?.(username) || [];
+    isAdmin = Array.isArray(groups) && groups.includes("_admin");
+  } catch {}
   upsertUser(db, { username, isAdmin });
   return getUser(db, username);
 }

@@ -578,13 +578,14 @@
       // → POST /api/cloud_browser_session → iframe sessionViewerUrl.
       // Errors surface inline (503 = configure STEEL_API_KEY, 402 =
       // upgrade, 5xx = upstream Steel issue, etc.).
-      import { createCloudSession } from "/mod/_core/web_browsing/cloud-browser-bridge.js";
+      import { createCloudSession, releaseCloudSession } from "/mod/_core/web_browsing/cloud-browser-bridge.js";
 
       const startBtn = document.querySelector("[data-cloud-start]");
       const errorBox = document.querySelector("[data-cloud-error]");
       const cloudFrame = document.querySelector("[data-cloud-frame]");
       const cloudIframe = document.querySelector("[data-cloud-iframe]");
       const endBtn = document.querySelector("[data-cloud-end]");
+      let activeSessionId = null;
 
       function showError(msg) {
         if (!errorBox) return;
@@ -606,6 +607,7 @@
           if (!session?.viewerUrl) {
             throw new Error("Steel returned no viewerUrl. Provider may have changed its API shape.");
           }
+          activeSessionId = session.sessionId || null;
           cloudIframe.src = session.viewerUrl;
           cloudFrame.hidden = false;
         } catch (err) {
@@ -622,9 +624,27 @@
         }
       });
 
-      endBtn?.addEventListener("click", () => {
+      endBtn?.addEventListener("click", async () => {
         if (cloudFrame) cloudFrame.hidden = true;
         if (cloudIframe) cloudIframe.src = "about:blank";
+        const sid = activeSessionId;
+        activeSessionId = null;
+        if (sid) {
+          // Fire and forget — server-side release stops Steel credits, but
+          // there's nothing useful to surface in the UI for this.
+          try { await releaseCloudSession({ sessionId: sid }); } catch {}
+        }
+      });
+
+      // Best-effort cleanup if the user closes the tab with a session live.
+      window.addEventListener("beforeunload", () => {
+        if (activeSessionId && navigator.sendBeacon) {
+          const blob = new Blob(
+            [JSON.stringify({ sessionId: activeSessionId })],
+            { type: "application/json" }
+          );
+          navigator.sendBeacon("/api/cloud_browser_release", blob);
+        }
       });
     </script>
 
