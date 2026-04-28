@@ -15,11 +15,12 @@ The MV3 manifest asks for:
 | Permission | Why |
 |---|---|
 | `activeTab` | The agent only operates on tabs you've explicitly activated. No background access to all your tabs. |
-| `scripting` | To inject the small reader/clicker functions into pages (paired with `activeTab`). |
+| `scripting` | To inject the small reader/clicker functions into pages (paired with `activeTab` or, if granted, `<all_urls>`). |
 | `tabs` | To list/create/close tabs when you ask the agent to. |
 | `storage` | To remember which web app origin to trust. |
+| `<all_urls>` *(optional)* | **Default OFF.** Granted only if you click "Grant access to all sites" in the popup. Required for the agent to operate tabs you didn't manually activate. Revocable from the same popup. |
 
-We do **not** request `<all_urls>`, `debugger`, or `webRequest`. The Companion can't read your bookmarks, history, passwords, or anything in tabs you haven't activated.
+We do **not** request `debugger`, `webRequest`, or remote-code-loading capabilities. The Companion can't read your bookmarks, history, saved passwords, or anything outside the tabs you (or your authorized GiveMeSpace tab) have explicitly invoked. Full data-handling disclosure: [`PRIVACY.md`](./PRIVACY.md). Chrome Web Store submission readiness: [`CHROME-WEB-STORE.md`](./CHROME-WEB-STORE.md).
 
 ## Install (developer / unpacked)
 

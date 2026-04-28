@@ -2,8 +2,10 @@
   "manifest_version": 3,
   "name": "GiveMeSpace Companion",
   "short_name": "GiveMeSpace",
-  "version": "0.1.0",
-  "description": "Lets the GiveMeSpace web app drive your active browser tab — navigate, read, click, type, screenshot. Pro alternative to the desktop app.",
+  "version": "0.2.0",
+  "description": "Lets your authorized GiveMeSpace tab control your active browser to automate routine workflows you've initiated.",
+  "author": "Isiah Green",
+  "homepage_url": "https://givemespace.ai",
   "icons": {
     "16":  "icons/icon-16.png",
     "32":  "icons/icon-32.png",
@@ -28,6 +30,9 @@
     "tabs",
     "storage"
   ],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -37,8 +42,14 @@
         "http://localhost:3000/*"
       ],
       "js": ["content.js"],
-      "run_at": "document_start",
+      "run_at": "document_idle",
       "all_frames": false
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": []
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
