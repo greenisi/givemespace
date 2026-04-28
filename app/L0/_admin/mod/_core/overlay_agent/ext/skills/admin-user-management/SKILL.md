@@ -1,6 +1,6 @@
 ---
 name: Admin User Management
-description: Admin-only router skill for users, groups, passwords, and account storage in the layered Space Agent runtime.
+description: Admin-only router skill for users, groups, passwords, and account storage in the layered GiveMeSpace runtime.
 metadata:
   when:
     tags:

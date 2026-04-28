@@ -21,8 +21,8 @@ export function applyOpenRouterHeaders(apiRequest = {}, options = {}) {
       ? { ...apiRequest.headers }
       : {};
 
-  headers["HTTP-Referer"] = String(options?.referer || "https://space-agent.ai").trim();
-  headers["X-OpenRouter-Title"] = String(options?.title || "Space Agent").trim();
+  headers["HTTP-Referer"] = String(options?.referer || "https://givemespace.ai").trim();
+  headers["X-OpenRouter-Title"] = String(options?.title || "GiveMeSpace").trim();
   headers["X-OpenRouter-Categories"] = String(
     options?.categories || "personal-agent,cloud-agent"
   ).trim();

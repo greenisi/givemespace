@@ -1,13 +1,13 @@
 <p align="center">
-  <a href="https://space-agent.ai"><img src="./.github/readme-banner-thin.svg" alt="Space Agent banner" /></a>
+  <a href="https://givemespace.ai"><img src="./.github/readme-banner-thin.svg" alt="GiveMeSpace banner" /></a>
 </p>
 
 <p align="center">
 <br>
-  <a href="https://space-agent.ai"><img alt="Try Live Now!" src="./.github/readme-try-live-now.svg" /></a>
+  <a href="https://givemespace.ai"><img alt="Try Live Now!" src="./.github/readme-try-live-now.svg" /></a>
   <br />
   <br />
-  <a href="https://github.com/agent0ai/space-agent/releases/latest"><img alt="Run local App" height="50" src="https://img.shields.io/badge/Run%20local%20App-59F0A8?style=for-the-badge&labelColor=07111F&color=59F0A8" /></a>
+  <a href="https://github.com/greenisi/givemespace/releases/latest"><img alt="Run local App" height="50" src="https://img.shields.io/badge/Run%20local%20App-59F0A8?style=for-the-badge&labelColor=07111F&color=59F0A8" /></a>
   <a href="#host"><img alt="Host yourself" height="50" src="https://img.shields.io/badge/Host%20yourself-FFFFFF?style=for-the-badge&labelColor=07111F&color=FFFFFF" /></a>
 </p>
 
@@ -20,14 +20,14 @@
   &nbsp;
   <a href="https://www.youtube.com/@AgentZeroFW"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white" /></a>
   &nbsp;
-  <a href="https://deepwiki.com/agent0ai/space-agent"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg" /></a>
+  <a href="https://deepwiki.com/greenisi/givemespace"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg" /></a>
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=CNRHxEZ8yqs"><img src="./.github/thumbnail.webp" alt="Watch Space Agent on YouTube" width="560" /></a>
+  <a href="https://www.youtube.com/watch?v=CNRHxEZ8yqs"><img src="./.github/thumbnail.webp" alt="Watch GiveMeSpace on YouTube" width="560" /></a>
 </p>
 
-## Why Space Agent Is Different
+## Why GiveMeSpace Is Different
 
 <table width="100%" border="0" cellpadding="0" cellspacing="0">
   <tr>
@@ -42,11 +42,11 @@
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <img src="packaging/resources/icons/source/space-agent-icon-256.webp" alt="Space Agent app icon" width="120" />
+      <img src="packaging/resources/icons/source/givemespace-icon-256.webp" alt="GiveMeSpace app icon" width="120" />
     </td>
     <td valign="top" width="50%">
       <strong>The agent lives in the frontend runtime</strong><br />
-      Space Agent runs in the browser layer itself, whether you open it in a tab or through the desktop app, so the agent can work directly with the same framework, modules, spaces, and UI it is reshaping.
+      GiveMeSpace runs in the browser layer itself, whether you open it in a tab or through the desktop app, so the agent can work directly with the same framework, modules, spaces, and UI it is reshaping.
     </td>
   </tr>
   <tr>
@@ -62,16 +62,16 @@
   <tr>
     <td valign="top" width="50%">
       <strong>Puzzle-piece modularity</strong><br />
-      The core stays small. Most of Space Agent is made of modular pieces that can be added, removed, or swapped cleanly instead of being welded into one rigid app.
+      The core stays small. Most of GiveMeSpace is made of modular pieces that can be added, removed, or swapped cleanly instead of being welded into one rigid app.
     </td>
     <td align="center" valign="top" width="50%">
-      <img src="app/L0/_all/mod/_core/visual/res/chat/admin/helmet_no_bg_256.webp" alt="Space Agent helmet" height="112" />
+      <img src="app/L0/_all/mod/_core/visual/res/chat/admin/helmet_no_bg_256.webp" alt="GiveMeSpace helmet" height="112" />
     </td>
   </tr>
   <tr>
     <td valign="top" width="50%">
       <strong>Personal to hierarchical</strong><br />
-      Use Space Agent as a completely personal assistant, or organize it into a hierarchical system of users and groups as the scope grows.
+      Use GiveMeSpace as a completely personal assistant, or organize it into a hierarchical system of users and groups as the scope grows.
     </td>
     <td valign="top" width="50%">
       <strong>Per-user work, group sharing</strong><br />
@@ -80,7 +80,7 @@
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <img src="app/L0/_all/mod/_core/visual/res/engineer/astronaut_red_512h.webp" alt="Space Agent astronaut" height="148" />
+      <img src="app/L0/_all/mod/_core/visual/res/engineer/astronaut_red_512h.webp" alt="GiveMeSpace astronaut" height="148" />
     </td>
     <td valign="top" width="50%">
       <strong>Persistent admin and time travel</strong><br />
@@ -91,7 +91,7 @@
 
 ## Try it in 30 seconds
 
-# [space-agent.ai](https://space-agent.ai)
+# [givemespace.ai](https://givemespace.ai)
 
 Try our demo server with guest account.
 
@@ -99,15 +99,15 @@ Try our demo server with guest account.
 
 ### The desktop app
 
-Grab the latest build from [GitHub Releases](https://github.com/agent0ai/space-agent/releases/latest). It runs everything as one app. No terminal required.
+Grab the latest build from [GitHub Releases](https://github.com/greenisi/givemespace/releases/latest). It runs everything as one app. No terminal required.
 
 ### A real server, for you or your team
 
 <a id="host"></a>
 
 ```bash
-git clone https://github.com/agent0ai/space-agent.git
-cd space-agent
+git clone https://github.com/greenisi/givemespace.git
+cd givemespace
 npm install
 
 # create yourself an admin
@@ -136,7 +136,7 @@ Run `node space help` to see the full command surface and built-in help for each
 
 ## AI-driven development and documentation
 
-Space Agent is developed by AI agents, including its documentation.
+GiveMeSpace is developed by AI agents, including its documentation.
 
 The framework keeps a hierarchical `AGENTS.md` instruction system, plus skills and focused docs, so agents can understand ownership, architecture, workflows, and local implementation rules while they build and maintain the system autonomously.
 
@@ -144,4 +144,4 @@ DeepWiki covers the human-readable side of that same knowledge base. Together, t
 
 If you want the deep tour, start here:
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/agent0ai/space-agent)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/greenisi/givemespace)

@@ -9,8 +9,8 @@ Disallow: /L1/
 Disallow: /L2/
 Disallow: /~/
 
-Sitemap: https://space-agent.ai/sitemap.xml
+Sitemap: https://givemespace.ai/sitemap.xml
 
 # LLM context files
-# https://space-agent.ai/llms.txt
-# https://space-agent.ai/llms-full.txt
+# https://givemespace.ai/llms.txt
+# https://givemespace.ai/llms-full.txt

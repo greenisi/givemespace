@@ -1,12 +1,12 @@
 {
-  "name": "space-agent",
+  "name": "givemespace",
   "version": "0.36.0",
   "private": true,
   "description": "Browser-first AI agent with a thin Node.js server.",
   "author": "Jan Tomasek",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agent0ai/space-agent.git"
+    "url": "https://github.com/greenisi/givemespace.git"
   },
   "main": "packaging/desktop/main.js",
   "scripts": {
@@ -32,13 +32,13 @@
     "node": ">=20"
   },
   "build": {
-    "appId": "com.spaceagent.desktop",
-    "productName": "Space Agent",
+    "appId": "com.givemespace.desktop",
+    "productName": "GiveMeSpace",
     "npmRebuild": false,
     "publish": {
       "provider": "github",
-      "owner": "agent0ai",
-      "repo": "space-agent",
+      "owner": "greenisi",
+      "repo": "givemespace",
       "releaseType": "release"
     },
     "files": [
@@ -57,7 +57,7 @@
       "buildResources": "packaging/resources"
     },
     "mac": {
-      "icon": "packaging/resources/icons/source/space-agent-icon.png",
+      "icon": "packaging/resources/icons/source/givemespace-icon.png",
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg",
@@ -76,7 +76,7 @@
     "linux": {
       "icon": "packaging/platforms/linux/icons",
       "category": "Development",
-      "maintainer": "Jan Tomasek <info@space-agent.ai>",
+      "maintainer": "Jan Tomasek <info@givemespace.ai>",
       "target": [
         "AppImage"
       ]

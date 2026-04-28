@@ -73,7 +73,7 @@ function resolveDesktopServerTmpDir(options = {}) {
   }
 
   const tempPath = String(options.tempPath || os.tmpdir());
-  return path.join(tempPath, "space-agent", "server-tmp");
+  return path.join(tempPath, "givemespace", "server-tmp");
 }
 
 function resolveDesktopAuthDataDir(options = {}) {

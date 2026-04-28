@@ -58,7 +58,7 @@ CLOUD_SHARE_URL:
   description: Public cloud-share host or URL used by the spaces share modal for hosted uploads and links.
   type: text
   allowed: ["*"]
-  default: share.space-agent.ai
+  default: share.givemespace.ai
   frontend_exposed: true
 CUSTOMWARE_GIT_HISTORY:
   description: Enable debounced local Git history repositories in writable L1 group and L2 user roots.

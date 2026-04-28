@@ -71,11 +71,11 @@ test("supervisor update source uses runtime GIT_URL over local origin", async ()
       cwd: tempDir,
       stdio: "ignore"
     });
-    execFileSync("git", ["config", "user.name", "Space Agent"], {
+    execFileSync("git", ["config", "user.name", "GiveMeSpace"], {
       cwd: tempDir,
       stdio: "ignore"
     });
-    execFileSync("git", ["config", "user.email", "space-agent@example.com"], {
+    execFileSync("git", ["config", "user.email", "givemespace@example.com"], {
       cwd: tempDir,
       stdio: "ignore"
     });

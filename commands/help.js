@@ -18,7 +18,7 @@ function printCommandList(helpEntries) {
     0
   );
 
-  console.log("Space Agent CLI");
+  console.log("GiveMeSpace CLI");
   console.log("");
   console.log("Usage:");
   console.log("  node space <command> [args]");

@@ -14,7 +14,7 @@ const SYSTEM_PROMPT_PATH = path.join(
   "openrouter-system-prompt.md"
 );
 const PACKAGE_JSON_PATH = path.join(__dirname, "..", "..", "package.json");
-const DEFAULT_REPOSITORY_SLUG = "agent0ai/space-agent";
+const DEFAULT_REPOSITORY_SLUG = "greenisi/givemespace";
 
 function writeOutput(name, value) {
   const outputPath = process.env.GITHUB_OUTPUT;
@@ -81,15 +81,15 @@ function buildDownloadsTable(currentTag) {
   const rows = [
     {
       architecture: "x86",
-      macos: { text: "Mac Intel", fileName: `Space-Agent-${releaseVersion}-macos-x64.dmg` },
-      linux: { text: "Linux x86", fileName: `Space-Agent-${releaseVersion}-linux-x64.AppImage` },
-      windows: { text: "Win x86", fileName: `Space-Agent-${releaseVersion}-windows-x64.exe` }
+      macos: { text: "Mac Intel", fileName: `GiveMeSpace-${releaseVersion}-macos-x64.dmg` },
+      linux: { text: "Linux x86", fileName: `GiveMeSpace-${releaseVersion}-linux-x64.AppImage` },
+      windows: { text: "Win x86", fileName: `GiveMeSpace-${releaseVersion}-windows-x64.exe` }
     },
     {
       architecture: "ARM",
-      macos: { text: "Mac ARM", fileName: `Space-Agent-${releaseVersion}-macos-arm64.dmg` },
-      linux: { text: "Linux ARM", fileName: `Space-Agent-${releaseVersion}-linux-arm64.AppImage` },
-      windows: { text: "Win ARM", fileName: `Space-Agent-${releaseVersion}-windows-arm64.exe` }
+      macos: { text: "Mac ARM", fileName: `GiveMeSpace-${releaseVersion}-macos-arm64.dmg` },
+      linux: { text: "Linux ARM", fileName: `GiveMeSpace-${releaseVersion}-linux-arm64.AppImage` },
+      windows: { text: "Win ARM", fileName: `GiveMeSpace-${releaseVersion}-windows-arm64.exe` }
     }
   ];
 
@@ -325,7 +325,7 @@ async function generateReleaseBodyWithOpenRouter(commits, options = {}) {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": `https://github.com/${process.env.GITHUB_REPOSITORY || ""}`,
-      "X-OpenRouter-Title": "Space Agent Desktop Release Notes"
+      "X-OpenRouter-Title": "GiveMeSpace Desktop Release Notes"
     },
     body: JSON.stringify(payload)
   });

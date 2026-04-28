@@ -36,7 +36,7 @@ async function parseServeArgs(args, projectRoot) {
 
 export const help = {
   name: "serve",
-  summary: "Start the local Space Agent server.",
+  summary: "Start the local GiveMeSpace server.",
   usage: [
     "node space serve",
     "node space serve HOST=0.0.0.0 PORT=3000",

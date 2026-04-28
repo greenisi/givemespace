@@ -20,12 +20,12 @@ const EXAMPLE_ORDER = Object.freeze([
 ]);
 const RESOURCE_LINKS = Object.freeze([
   {
-    href: "https://github.com/agent0ai/space-agent",
+    href: "https://github.com/greenisi/givemespace",
     id: "github-repo",
     label: "GitHub Repo"
   },
   {
-    href: "https://deepwiki.com/agent0ai/space-agent",
+    href: "https://deepwiki.com/greenisi/givemespace",
     id: "deepwiki-docs",
     label: "DeepWiki Docs"
   },

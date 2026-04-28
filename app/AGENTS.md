@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`app/` is the primary Space Agent runtime.
+`app/` is the primary GiveMeSpace runtime.
 
 Keep agent orchestration, prompt construction, tool flow, state management, user interaction, and optimistic UX in the browser whenever possible. Server-backed work in this tree should be browser clients for explicit server APIs, not server-side orchestration leaking into the frontend.
 
@@ -293,7 +293,7 @@ Runtime guidance:
 
 ## Visual Direction
 
-Space Agent frontend work should look like one deliberate system rather than a mix of unrelated component-library defaults.
+GiveMeSpace frontend work should look like one deliberate system rather than a mix of unrelated component-library defaults.
 
 - minimal first: solve hierarchy with spacing, alignment, type scale, and one strong surface before adding extra chrome
 - use the semantic color tokens from `app/L0/_all/mod/_core/framework/css/colors.css`
