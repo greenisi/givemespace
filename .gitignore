@@ -20,3 +20,6 @@ server/data/*
 !server/data/.gitignore
 csr.csr
 key.pem
+
+# SaaS-layer SQLite database (per-installation; never commit)
+data/saas/

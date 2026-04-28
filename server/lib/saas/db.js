@@ -47,7 +47,13 @@ CREATE INDEX IF NOT EXISTS idx_usage_ts      ON usage_events(ts);
 
 function resolveDbPath(projectRoot) {
   const root = String(projectRoot || process.cwd());
-  return path.join(root, "server", "data", "saas", "saas.db");
+  // Outside the server/ watched dir on purpose: the dev_server file
+  // watcher restarts on saas.db-shm/wal mutations, which used to cause
+  // a restart loop on every llm_proxy write. Allow override via
+  // SAAS_DB_PATH env var for prod / multi-instance deployments.
+  const envOverride = String(process.env.SAAS_DB_PATH || "").trim();
+  if (envOverride) return envOverride;
+  return path.join(root, "data", "saas", "saas.db");
 }
 
 function ensureDir(filePath) {
