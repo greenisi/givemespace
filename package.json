@@ -29,7 +29,7 @@
     "package:desktop:windows:all": "node packaging/scripts/windows-package.js --arch x64,arm64"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5"
   },
   "build": {
     "appId": "com.givemespace.desktop",
