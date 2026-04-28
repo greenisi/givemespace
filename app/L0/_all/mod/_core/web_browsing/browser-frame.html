@@ -183,6 +183,12 @@
           <p>Embedded browser is in active development and may still have some limitations.</p>
           <p class="browser-frame-empty-state-note">Use the address bar above to open a page, or tell GiveMeSpace what to do.</p>
         </div>
+
+        <div class="browser-frame-runtime-variant" data-browser-frame-variant="companion" hidden>
+          <p><strong>Companion connected</strong> — your browser is the surface.</p>
+          <p class="browser-frame-empty-state-note">Use the address bar above (or ask the agent) to open a page in your browser. GiveMeSpace will navigate, read, and click on your behalf.</p>
+          <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
+        </div>
       </div>
     </main>
     <script>
@@ -192,6 +198,8 @@
         const TAGS_ATTRIBUTE = "data-tags";
         const RUNTIME_APP = "app";
         const RUNTIME_BROWSER = "browser";
+        const RUNTIME_COMPANION = "companion";
+        const COMPANION_DETECTION_MS = 1500;
 
         function normalizeText(value) {
           return String(value || "").trim();
@@ -247,7 +255,59 @@
             });
         }
 
-        applyRuntimeVariant(resolveRuntimeContext());
+        // Wait briefly for the GiveMeSpace Companion (Chrome extension) to
+        // announce itself via window.postMessage. If it does, swap the
+        // browser-mode "Download native App" CTA for the companion variant
+        // — the agent now drives the user's real browser instead of the
+        // dead iframe fallback. Detection is opportunistic; the desktop
+        // (`app`) runtime is left untouched.
+        function detectCompanion() {
+          return new Promise((resolve) => {
+            let resolved = false;
+            const finish = (value) => {
+              if (resolved) return;
+              resolved = true;
+              resolve(value);
+            };
+            const handler = (event) => {
+              if (event.source !== globalThis) return;
+              const msg = event.data;
+              if (!msg || typeof msg !== "object") return;
+              if (msg.type === "gms.announce") {
+                globalThis.removeEventListener("message", handler);
+                finish({ available: true, version: String(msg.version || "") });
+              }
+            };
+            globalThis.addEventListener("message", handler);
+            setTimeout(() => {
+              globalThis.removeEventListener("message", handler);
+              finish({ available: false, version: "" });
+            }, COMPANION_DETECTION_MS);
+          });
+        }
+
+        function annotateCompanionVersion(version) {
+          const el = globalThis.document.querySelector(
+            "[data-browser-frame-companion-version]"
+          );
+          if (!el) return;
+          el.textContent = version ? `Companion v${version}` : "";
+        }
+
+        async function bootstrap() {
+          const baseRuntime = resolveRuntimeContext();
+          if (baseRuntime === RUNTIME_BROWSER) {
+            const companion = await detectCompanion();
+            if (companion.available) {
+              annotateCompanionVersion(companion.version);
+              applyRuntimeVariant(RUNTIME_COMPANION);
+              return;
+            }
+          }
+          applyRuntimeVariant(baseRuntime);
+        }
+
+        bootstrap();
       }());
     </script>
   </body>

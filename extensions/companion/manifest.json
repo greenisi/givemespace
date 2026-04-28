@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GiveMeSpace Companion",
   "short_name": "GiveMeSpace",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Lets your authorized GiveMeSpace tab control your active browser to automate routine workflows you've initiated.",
   "author": "Isiah Green",
   "homepage_url": "https://givemespace.ai",
@@ -43,7 +43,7 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle",
-      "all_frames": false
+      "all_frames": true
     }
   ],
   "content_security_policy": {
