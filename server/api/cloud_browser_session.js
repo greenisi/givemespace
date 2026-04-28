@@ -38,7 +38,7 @@ function userTier(context) {
   return row?.tier || "free";
 }
 
-const TIERS_WITH_CLOUD_ACCESS = new Set(["admin", "pro", "studio"]);
+const TIERS_WITH_CLOUD_ACCESS = new Set(["admin", "starter", "pro", "studio"]);
 
 export async function post(context) {
   if (!isCloudBrowserConfigured()) {
