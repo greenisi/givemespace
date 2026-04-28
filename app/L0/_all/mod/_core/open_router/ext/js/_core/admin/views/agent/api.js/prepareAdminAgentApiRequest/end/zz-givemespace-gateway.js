@@ -19,6 +19,7 @@ function bypassEnabled() {
 function rewriteRequest(apiRequest) {
   const out = { ...apiRequest };
   out.apiEndpoint = GATEWAY_ENDPOINT;
+  out.requestUrl = GATEWAY_ENDPOINT;
   if (out.settings && typeof out.settings === "object") {
     out.settings = { ...out.settings, apiEndpoint: GATEWAY_ENDPOINT };
   }
@@ -30,6 +31,10 @@ function rewriteRequest(apiRequest) {
   delete headers["X-OpenRouter-Categories"];
   out.headers = headers;
   out.credentials = "include";
+  const existingInit =
+    out.requestInit && typeof out.requestInit === "object" ? { ...out.requestInit } : {};
+  existingInit.credentials = "include";
+  out.requestInit = existingInit;
   return out;
 }
 

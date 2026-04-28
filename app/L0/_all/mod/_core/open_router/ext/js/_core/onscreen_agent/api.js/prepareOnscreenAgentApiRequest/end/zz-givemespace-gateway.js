@@ -32,6 +32,12 @@ function bypassEnabled() {
 function rewriteRequest(apiRequest) {
   const out = { ...apiRequest };
   out.apiEndpoint = GATEWAY_ENDPOINT;
+  // The actual fetch uses requestUrl (set earlier in the prepare chain
+  // from settings.apiEndpoint via resolveChatRequestUrl). It's already
+  // pointed at openrouter.ai by the time we run, so we have to override
+  // here too — otherwise apiEndpoint=/api/llm_proxy is a no-op and the
+  // browser tries a cross-origin fetch (no cookies → 401).
+  out.requestUrl = GATEWAY_ENDPOINT;
   if (out.settings && typeof out.settings === "object") {
     out.settings = { ...out.settings, apiEndpoint: GATEWAY_ENDPOINT };
   }
@@ -47,7 +53,13 @@ function rewriteRequest(apiRequest) {
   out.headers = headers;
 
   // Ensure cookie travels so the server can authenticate the user.
+  // The downstream buildFetchRequestInit() reads requestInit for credentials,
+  // not the top-level apiRequest.credentials field, so set it there too.
   out.credentials = "include";
+  const existingInit =
+    out.requestInit && typeof out.requestInit === "object" ? { ...out.requestInit } : {};
+  existingInit.credentials = "include";
+  out.requestInit = existingInit;
 
   return out;
 }
