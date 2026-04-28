@@ -158,6 +158,49 @@
         text-decoration: none;
       }
       .browser-frame-mode-body a:hover { text-decoration: underline; }
+      .browser-frame-cloud-cta {
+        appearance: none;
+        background: #59f0a8;
+        color: #050816;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 18px;
+        margin-top: 8px;
+        font: 600 13px/1 "SF Pro Text", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .browser-frame-cloud-cta:hover { filter: brightness(1.05); }
+      .browser-frame-cloud-cta:disabled {
+        background: rgba(89, 240, 168, 0.45);
+        cursor: progress;
+      }
+      .browser-frame-cloud-error {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #fecaca;
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: left;
+      }
+      .browser-frame-cloud-frame {
+        position: fixed;
+        inset: 0;
+        background: #050816;
+        z-index: 3;
+      }
+      .browser-frame-cloud-frame[hidden] { display: none; }
+      .browser-frame-cloud-frame iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      .browser-frame-cloud-frame .browser-frame-companion-preview-toolbar {
+        z-index: 4;
+      }
 
       .browser-frame-runtime-variant[hidden] {
         display: none !important;
@@ -253,6 +296,13 @@
       </div>
     </div>
 
+    <div class="browser-frame-cloud-frame" data-cloud-frame hidden>
+      <iframe data-cloud-iframe title="Cloud browser session" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-pointer-lock allow-storage-access-by-user-activation"></iframe>
+      <div class="browser-frame-companion-preview-toolbar">
+        <button type="button" data-cloud-end aria-label="End cloud session">End session</button>
+      </div>
+    </div>
+
     <main class="browser-frame-empty-state" aria-label="Browser placeholder">
       <div class="browser-frame-empty-state-figure" aria-hidden="true">
         <img src="/mod/_core/visual/res/engineer/astronaut_red_no_bg.png" alt="" />
@@ -318,9 +368,10 @@
           </div>
 
           <div class="browser-frame-mode-body" data-mode-body="cloud" hidden>
-            <p><strong>Cloud browser</strong> — true seamless embed.</p>
-            <p class="browser-frame-empty-state-note">Headless Chromium runs on our servers, video-streamed into this frame. No popup, no title bar, real interactivity.</p>
-            <p class="browser-frame-empty-state-note">Pro plan, $89/mo. <a href="https://givemespace.ai/pricing" target="_blank" rel="noopener">See pricing ↗</a> · <em>Currently building (Phase 4.5 W4)</em></p>
+            <p><strong>Cloud browser</strong> — headless Chromium streamed inline. Works on phone, work laptop, anywhere with a tab.</p>
+            <p class="browser-frame-empty-state-note">Pro plan, $89/mo. <a href="https://givemespace.ai/pricing" target="_blank" rel="noopener">See pricing ↗</a></p>
+            <button type="button" class="browser-frame-cloud-cta" data-cloud-start>Start cloud session</button>
+            <div class="browser-frame-cloud-error" data-cloud-error hidden></div>
           </div>
 
           <div class="browser-frame-mode-body" data-mode-body="desktop" hidden>
@@ -522,11 +573,66 @@
       });
     </script>
 
+    <script type="module">
+      // Cloud browser session orchestration. Click "Start cloud session"
+      // → POST /api/cloud_browser_session → iframe sessionViewerUrl.
+      // Errors surface inline (503 = configure STEEL_API_KEY, 402 =
+      // upgrade, 5xx = upstream Steel issue, etc.).
+      import { createCloudSession } from "/mod/_core/web_browsing/cloud-browser-bridge.js";
+
+      const startBtn = document.querySelector("[data-cloud-start]");
+      const errorBox = document.querySelector("[data-cloud-error]");
+      const cloudFrame = document.querySelector("[data-cloud-frame]");
+      const cloudIframe = document.querySelector("[data-cloud-iframe]");
+      const endBtn = document.querySelector("[data-cloud-end]");
+
+      function showError(msg) {
+        if (!errorBox) return;
+        errorBox.textContent = msg;
+        errorBox.hidden = false;
+      }
+      function hideError() {
+        if (!errorBox) return;
+        errorBox.hidden = true;
+      }
+
+      startBtn?.addEventListener("click", async () => {
+        if (!startBtn || !cloudFrame || !cloudIframe) return;
+        startBtn.disabled = true;
+        startBtn.textContent = "Spinning up Chromium…";
+        hideError();
+        try {
+          const session = await createCloudSession();
+          if (!session?.viewerUrl) {
+            throw new Error("Steel returned no viewerUrl. Provider may have changed its API shape.");
+          }
+          cloudIframe.src = session.viewerUrl;
+          cloudFrame.hidden = false;
+        } catch (err) {
+          if (err?.statusCode === 503) {
+            showError("Cloud browser isn't configured on this server yet. Operator: set STEEL_API_KEY (see docs/CLOUD-BROWSER-SETUP.md).");
+          } else if (err?.statusCode === 402) {
+            showError("Cloud browser is a Pro feature ($89/mo). Upgrade at /pricing — or use My browser (Free) / Desktop app.");
+          } else {
+            showError(`Couldn't start session: ${err?.message || err}`);
+          }
+        } finally {
+          startBtn.disabled = false;
+          startBtn.textContent = "Start cloud session";
+        }
+      });
+
+      endBtn?.addEventListener("click", () => {
+        if (cloudFrame) cloudFrame.hidden = true;
+        if (cloudIframe) cloudIframe.src = "about:blank";
+      });
+    </script>
+
     <script>
       // Browser-mode picker. Three modes share the same underlying URL bar
       // and address submit; only the rendering strategy differs.
       //   - companion : Companion extension popup overlay (Free)
-      //   - cloud     : Headless Chromium video stream (Pro, building)
+      //   - cloud     : Headless Chromium video stream via Steel.dev (Pro)
       //   - desktop   : Native Electron app (always Free, separate download)
       // Choice persists in localStorage so it survives reloads. Other
       // modules in the GMS app read window.localStorage.getItem("gms.browserMode")
