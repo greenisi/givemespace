@@ -99,6 +99,59 @@ const HANDLERS = {
   screenshot: async ({ format = "jpeg", quality = 80 } = {}) => {
     const dataUrl = await chrome.tabs.captureVisibleTab(null, { format, quality });
     return { dataUrl };
+  },
+
+  // Open URL in a Chrome *popup* window — a separate, chromeless, resizable
+  // window that feels like a sub-window of GiveMeSpace rather than another
+  // tab in the user's main browser. captureVisibleTab works on the popup
+  // window we own, so we can take a live screenshot for inline preview.
+  create_popup_window: async ({
+    url,
+    width = 1280,
+    height = 800,
+    focused = false
+  } = {}) => {
+    if (!url || typeof url !== "string") {
+      throw new Error("create_popup_window: 'url' is required");
+    }
+    const win = await chrome.windows.create({
+      url,
+      type: "popup",
+      width,
+      height,
+      focused
+    });
+    return {
+      windowId: win.id,
+      tabId: win.tabs?.[0]?.id || null
+    };
+  },
+
+  // Screenshot a specific window (the popup we created above). Tab inside
+  // the window must be the foreground tab of THAT window — for popup
+  // windows that always holds.
+  screenshot_window: async ({ windowId, format = "jpeg", quality = 60 } = {}) => {
+    if (typeof windowId !== "number") {
+      throw new Error("screenshot_window: numeric 'windowId' is required");
+    }
+    const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format, quality });
+    return { dataUrl };
+  },
+
+  focus_window: async ({ windowId } = {}) => {
+    if (typeof windowId !== "number") {
+      throw new Error("focus_window: numeric 'windowId' is required");
+    }
+    await chrome.windows.update(windowId, { focused: true, drawAttention: true });
+    return { focused: windowId };
+  },
+
+  close_window: async ({ windowId } = {}) => {
+    if (typeof windowId !== "number") {
+      throw new Error("close_window: numeric 'windowId' is required");
+    }
+    await chrome.windows.remove(windowId);
+    return { closed: windowId };
   }
 };
 

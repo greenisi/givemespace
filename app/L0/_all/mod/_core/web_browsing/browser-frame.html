@@ -58,6 +58,57 @@
         font-size: 0.95rem;
       }
 
+      .browser-frame-companion-preview {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        background: #050816;
+      }
+      .browser-frame-companion-preview[hidden] { display: none; }
+      .browser-frame-companion-preview img {
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #050816;
+        cursor: pointer;
+      }
+      .browser-frame-companion-preview-toolbar {
+        position: absolute;
+        bottom: 0.75rem;
+        right: 0.75rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 2;
+      }
+      .browser-frame-companion-preview-toolbar button {
+        padding: 6px 12px;
+        background: rgba(5, 8, 22, 0.85);
+        color: rgba(239, 245, 255, 0.92);
+        border: 1px solid rgba(89, 240, 168, 0.45);
+        border-radius: 999px;
+        font: 600 12px/1.2 "SF Pro Text", system-ui, sans-serif;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+      }
+      .browser-frame-companion-preview-toolbar button:hover {
+        border-color: #59f0a8;
+        color: #59f0a8;
+      }
+      .browser-frame-companion-preview-stamp {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 2;
+        padding: 4px 10px;
+        background: rgba(5, 8, 22, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        font: 600 11px/1.2 "SF Pro Text", system-ui, sans-serif;
+        color: rgba(239, 245, 255, 0.7);
+      }
+
       .browser-frame-runtime-variant[hidden] {
         display: none !important;
       }
@@ -142,6 +193,16 @@
   </head>
   <body>
     <x-context hidden data-browser-frame-runtime></x-context>
+
+    <div class="browser-frame-companion-preview" data-browser-frame-companion-preview hidden>
+      <span class="browser-frame-companion-preview-stamp" data-browser-frame-companion-stamp>Live preview</span>
+      <img alt="Live preview of the page open in your browser" data-browser-frame-companion-img />
+      <div class="browser-frame-companion-preview-toolbar">
+        <button type="button" data-browser-frame-companion-refresh aria-label="Refresh preview">↻ Refresh</button>
+        <button type="button" data-browser-frame-companion-focus aria-label="Open the live page">Open page ↗</button>
+      </div>
+    </div>
+
     <main class="browser-frame-empty-state" aria-label="Browser placeholder">
       <div class="browser-frame-empty-state-figure" aria-hidden="true">
         <img src="/mod/_core/visual/res/engineer/astronaut_red_no_bg.png" alt="" />
@@ -309,6 +370,77 @@
 
         bootstrap();
       }());
+    </script>
+
+    <script type="module">
+      // Companion live preview wiring. Listens for {type:"gms.preview"}
+      // postMessages from the parent app shell (sent by store.js after a
+      // Companion-driven navigation), paints the screenshot inline, and
+      // refreshes / focuses the popup window via the bridge.
+      const previewBox  = document.querySelector("[data-browser-frame-companion-preview]");
+      const previewImg  = document.querySelector("[data-browser-frame-companion-img]");
+      const previewStamp = document.querySelector("[data-browser-frame-companion-stamp]");
+      const refreshBtn  = document.querySelector("[data-browser-frame-companion-refresh]");
+      const focusBtn    = document.querySelector("[data-browser-frame-companion-focus]");
+      let activeWindowId = null;
+
+      function fmtNow() {
+        const d = new Date();
+        return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" });
+      }
+
+      function setPreview(dataUrl, windowId) {
+        if (!previewBox || !previewImg) return;
+        previewImg.src = dataUrl;
+        previewBox.hidden = false;
+        if (previewStamp) previewStamp.textContent = `Live preview · ${fmtNow()}`;
+        if (typeof windowId === "number") activeWindowId = windowId;
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== window.parent) return;
+        const msg = event.data;
+        if (!msg || typeof msg !== "object") return;
+        if (msg.type === "gms.preview" && typeof msg.dataUrl === "string") {
+          setPreview(msg.dataUrl, msg.windowId);
+        }
+      });
+
+      async function getBridge() {
+        try {
+          return await import("/mod/_core/web_browsing/companion-bridge.js");
+        } catch {
+          return null;
+        }
+      }
+
+      refreshBtn?.addEventListener("click", async () => {
+        if (typeof activeWindowId !== "number") return;
+        const bridge = await getBridge();
+        if (!bridge) return;
+        try {
+          const shot = await bridge.companion.screenshotWindow(activeWindowId, {
+            format: "jpeg",
+            quality: 60
+          });
+          if (shot?.dataUrl) setPreview(shot.dataUrl, activeWindowId);
+        } catch {
+          /* ignore — preview is best-effort */
+        }
+      });
+
+      focusBtn?.addEventListener("click", async () => {
+        if (typeof activeWindowId !== "number") return;
+        const bridge = await getBridge();
+        if (!bridge) return;
+        try {
+          await bridge.companion.focusWindow(activeWindowId);
+        } catch {}
+      });
+
+      previewImg?.addEventListener("click", () => {
+        if (typeof activeWindowId === "number") focusBtn?.click();
+      });
     </script>
   </body>
 </html>

@@ -2465,25 +2465,80 @@ const model = {
       return false;
     }
     const existingTabId = browserSurface.companionTabId;
-    if (existingTabId) {
+    const existingWindowId = browserSurface.companionWindowId;
+    if (existingTabId && existingWindowId) {
       try {
         await bridge.companion.navigate(normalizedUrl, existingTabId);
+        this.scheduleCompanionPreview(id);
         return true;
       } catch {
-        // Tab was probably closed by the user; fall through to createTab.
+        // Window/tab was probably closed; fall through to recreate.
         browserSurface.companionTabId = null;
+        browserSurface.companionWindowId = null;
       }
     }
     try {
-      const created = await bridge.companion.createTab(normalizedUrl, true);
+      const created = await bridge.companion.createPopupWindow(normalizedUrl, {
+        focused: false
+      });
       if (created?.tabId) {
         browserSurface.companionTabId = created.tabId;
+        browserSurface.companionWindowId = created.windowId;
+        this.scheduleCompanionPreview(id);
         return true;
       }
     } catch {
       return false;
     }
     return false;
+  },
+
+  // After a Companion navigation, wait for the page to render then screenshot
+  // the popup window and post the dataURL into the browser-frame iframe so it
+  // can paint a live preview. Re-runs on each successful navigation. Errors
+  // are swallowed — preview is best-effort, the popup is the source of truth.
+  scheduleCompanionPreview(id, delayMs = 1500) {
+    if (typeof globalThis.setTimeout !== "function") return;
+    globalThis.setTimeout(() => {
+      void this.captureCompanionPreview(id);
+    }, delayMs);
+  },
+
+  async captureCompanionPreview(id) {
+    const browserSurface = this.getBrowser(id);
+    if (!browserSurface?.companionWindowId) return;
+    let bridge;
+    try {
+      bridge = await import("/mod/_core/web_browsing/companion-bridge.js");
+    } catch {
+      return;
+    }
+    let dataUrl = null;
+    try {
+      const shot = await bridge.companion.screenshotWindow(
+        browserSurface.companionWindowId,
+        { format: "jpeg", quality: 60 }
+      );
+      dataUrl = shot?.dataUrl || null;
+    } catch {
+      return;
+    }
+    if (!dataUrl) return;
+    const iframe = this.getIframe(id);
+    if (!iframe?.contentWindow) return;
+    try {
+      iframe.contentWindow.postMessage(
+        {
+          type: "gms.preview",
+          dataUrl,
+          windowId: browserSurface.companionWindowId,
+          tabId: browserSurface.companionTabId
+        },
+        "*"
+      );
+    } catch {
+      // contentWindow can throw on cross-origin or detached iframe — fine.
+    }
   },
 
   performNavigateFallback(id, nextUrl) {
