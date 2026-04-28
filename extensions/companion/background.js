@@ -101,26 +101,40 @@ const HANDLERS = {
     return { dataUrl };
   },
 
-  // Open URL in a Chrome *popup* window — a separate, chromeless, resizable
-  // window that feels like a sub-window of GiveMeSpace rather than another
-  // tab in the user's main browser. captureVisibleTab works on the popup
-  // window we own, so we can take a live screenshot for inline preview.
+  // Open URL in an OFFSCREEN Chrome popup window — chromeless, unfocused,
+  // positioned far outside the visible viewport so the user only sees the
+  // page through the inline screenshot preview the GiveMeSpace web app
+  // paints. captureVisibleTab still works on this window because the popup
+  // has exactly one tab in foreground state inside its own window context.
+  // We never bring the popup to front unless the user explicitly clicks
+  // "Open page ↗" in the preview toolbar.
   create_popup_window: async ({
     url,
     width = 1280,
     height = 800,
-    focused = false
+    offscreen = true
   } = {}) => {
     if (!url || typeof url !== "string") {
       throw new Error("create_popup_window: 'url' is required");
     }
-    const win = await chrome.windows.create({
+    // Top: 99999, left: 99999 — past any reasonable display, so even on
+    // multi-monitor setups Chrome clamps it to a bottom-right corner that
+    // requires deliberate effort to locate. macOS often clamps to the
+    // rightmost screen edge but the window stays out of the user's
+    // primary attention. Browser keeps it as a real window so screenshots
+    // work.
+    const params = {
       url,
       type: "popup",
       width,
       height,
-      focused
-    });
+      focused: false
+    };
+    if (offscreen) {
+      params.left = 99999;
+      params.top = 99999;
+    }
+    const win = await chrome.windows.create(params);
     return {
       windowId: win.id,
       tabId: win.tabs?.[0]?.id || null

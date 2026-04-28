@@ -2493,15 +2493,46 @@ const model = {
     return false;
   },
 
-  // After a Companion navigation, wait for the page to render then screenshot
-  // the popup window and post the dataURL into the browser-frame iframe so it
-  // can paint a live preview. Re-runs on each successful navigation. Errors
-  // are swallowed — preview is best-effort, the popup is the source of truth.
-  scheduleCompanionPreview(id, delayMs = 1500) {
+  // After a Companion navigation, wait for the page to render then start a
+  // continuous screenshot stream into the browser-frame iframe so the user
+  // sees the page rendering inside GiveMeSpace as if it were embedded.
+  // Re-runs on each successful navigation. Errors swallowed — preview is
+  // best-effort.
+  scheduleCompanionPreview(id, delayMs = 1200) {
     if (typeof globalThis.setTimeout !== "function") return;
+    // Cancel any previous stream for this surface.
+    this.stopCompanionPreviewStream(id);
     globalThis.setTimeout(() => {
-      void this.captureCompanionPreview(id);
+      void this.startCompanionPreviewStream(id);
     }, delayMs);
+  },
+
+  startCompanionPreviewStream(id, intervalMs = 1500) {
+    const browserSurface = this.getBrowser(id);
+    if (!browserSurface?.companionWindowId) return;
+    this.stopCompanionPreviewStream(id);
+    // Initial capture immediately, then a recurring tick.
+    void this.captureCompanionPreview(id);
+    const handle = globalThis.setInterval(() => {
+      const live = this.getBrowser(id);
+      if (!live?.companionWindowId) {
+        this.stopCompanionPreviewStream(id);
+        return;
+      }
+      void this.captureCompanionPreview(id);
+    }, intervalMs);
+    browserSurface.companionPreviewTimer = handle;
+  },
+
+  stopCompanionPreviewStream(id) {
+    const browserSurface = this.getBrowser(id);
+    if (!browserSurface) return;
+    if (browserSurface.companionPreviewTimer) {
+      try {
+        globalThis.clearInterval(browserSurface.companionPreviewTimer);
+      } catch {}
+      browserSurface.companionPreviewTimer = null;
+    }
   },
 
   async captureCompanionPreview(id) {
