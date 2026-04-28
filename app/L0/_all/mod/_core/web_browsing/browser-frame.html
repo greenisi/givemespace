@@ -347,13 +347,13 @@
 
         <div class="browser-frame-runtime-variant" data-browser-frame-variant="companion" hidden>
           <div class="browser-frame-mode-picker" role="radiogroup" aria-label="Browser rendering mode">
-            <button type="button" class="browser-frame-mode-chip" data-mode="companion" role="radio" aria-checked="true">
-              <strong>My browser</strong>
-              <span>Free · Companion</span>
-            </button>
-            <button type="button" class="browser-frame-mode-chip" data-mode="cloud" role="radio" aria-checked="false">
+            <button type="button" class="browser-frame-mode-chip" data-mode="cloud" role="radio" aria-checked="true">
               <strong>Cloud browser</strong>
-              <span>Pro · seamless</span>
+              <span>Pro · inline · phone</span>
+            </button>
+            <button type="button" class="browser-frame-mode-chip" data-mode="companion" role="radio" aria-checked="false">
+              <strong>My browser</strong>
+              <span>Free · pops a window</span>
             </button>
             <button type="button" class="browser-frame-mode-chip" data-mode="desktop" role="radio" aria-checked="false">
               <strong>Desktop app</strong>
@@ -361,17 +361,17 @@
             </button>
           </div>
 
-          <div class="browser-frame-mode-body" data-mode-body="companion">
-            <p><strong>Companion connected</strong> — your browser is the surface.</p>
-            <p class="browser-frame-empty-state-note">Type a URL above (or ask the agent) and the page opens in your real browser session, overlaid here. macOS will draw a thin window title bar — that's the seam.</p>
-            <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
-          </div>
-
-          <div class="browser-frame-mode-body" data-mode-body="cloud" hidden>
-            <p><strong>Cloud browser</strong> — headless Chromium streamed inline. Works on phone, work laptop, anywhere with a tab.</p>
+          <div class="browser-frame-mode-body" data-mode-body="cloud">
+            <p><strong>Cloud browser</strong> — headless Chromium streamed inline. Type a URL above and the page renders here. Works on phone, work laptop, anywhere.</p>
             <p class="browser-frame-empty-state-note">Pro plan, $89/mo. <a href="https://givemespace.ai/pricing" target="_blank" rel="noopener">See pricing ↗</a></p>
             <button type="button" class="browser-frame-cloud-cta" data-cloud-start>Start cloud session</button>
             <div class="browser-frame-cloud-error" data-cloud-error hidden></div>
+          </div>
+
+          <div class="browser-frame-mode-body" data-mode-body="companion" hidden>
+            <p><strong>Companion mode</strong> — pages open in a real Chrome popup window outside this frame.</p>
+            <p class="browser-frame-empty-state-note">Pick this if you want your real cookies / logins. Switch to <strong>Cloud</strong> if you want pages to render inline without a popup.</p>
+            <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
           </div>
 
           <div class="browser-frame-mode-body" data-mode-body="desktop" hidden>
@@ -534,6 +534,20 @@
         if (msg.type === "gms.preview" && typeof msg.dataUrl === "string") {
           setPreview(msg.dataUrl, msg.windowId);
         }
+        if (msg.type === "gms.cloudSession" && typeof msg.viewerUrl === "string") {
+          // Parent (store.js) navigated; auto-load session into cloud iframe.
+          const cloudFrame = document.querySelector("[data-cloud-frame]");
+          const cloudIframe = document.querySelector("[data-cloud-iframe]");
+          if (cloudIframe) cloudIframe.src = msg.viewerUrl;
+          if (cloudFrame) cloudFrame.hidden = false;
+        }
+        if (msg.type === "gms.cloudError" && typeof msg.error === "string") {
+          const errBox = document.querySelector("[data-cloud-error]");
+          if (errBox) {
+            errBox.textContent = msg.error;
+            errBox.hidden = false;
+          }
+        }
       });
 
       async function getBridge() {
@@ -669,7 +683,10 @@
           try {
             stored = String(globalThis.localStorage?.getItem(STORAGE_KEY) || "");
           } catch {}
-          return VALID_MODES.has(stored) ? stored : "companion";
+          // Default = cloud: it's the universal mode (works on phone,
+          // renders inline, no popup window). Companion mode is opt-in
+          // for users who want their real Chrome session/cookies.
+          return VALID_MODES.has(stored) ? stored : "cloud";
         }
 
         function applyMode(mode) {

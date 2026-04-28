@@ -2463,19 +2463,22 @@ const model = {
     }
     // Respect the user's browser-mode preference set by the picker in
     // browser-frame.html. Modes:
-    //   companion (default) — spawn Companion popup overlay (Free).
-    //   cloud              — would use Browserbase; not yet built. Don't
-    //                        spawn anything; iframe shows the upsell.
-    //   desktop            — direct user to the desktop app; iframe shows
-    //                        the download CTA.
-    let mode = "companion";
+    //   cloud (default) — Steel.dev session, iframed inline. Universal,
+    //                     mobile-friendly. Tier-gated.
+    //   companion       — Companion extension popup overlay. Real Chrome
+    //                     session, but pops a separate window.
+    //   desktop         — Direct user to the desktop app.
+    let mode = "cloud";
     try {
       const stored = String(globalThis.localStorage?.getItem("gms.browserMode") || "");
-      if (stored === "cloud" || stored === "desktop") mode = stored;
+      if (stored === "companion" || stored === "desktop") mode = stored;
     } catch {}
-    if (mode !== "companion") {
-      // Tear down any existing companion popup so we don't leave it
-      // floating after a mode switch.
+
+    // Cloud mode: auto-create a Steel session pointed at the URL. The
+    // iframe inside the placeholder picks up the viewerUrl via
+    // postMessage and renders the cloud-frame overlay.
+    if (mode === "cloud") {
+      // Tear down companion popup if there is one from a prior switch.
       const oldWindowId = browserSurface.companionWindowId;
       if (oldWindowId) {
         try {
@@ -2486,9 +2489,49 @@ const model = {
         browserSurface.companionTabId = null;
       }
       this.stopCompanionPreviewStream(id);
-      // Return true so the iframe.src fallback (which would 4xx on most
-      // sites) does NOT run. The iframe's mode-body already explains
-      // the chosen surface.
+      const iframe = this.getIframe(id);
+      try {
+        const cloudBridge = await import(
+          "/mod/_core/web_browsing/cloud-browser-bridge.js"
+        );
+        const session = await cloudBridge.createCloudSession({ url: nextUrl });
+        if (session?.viewerUrl) {
+          iframe?.contentWindow?.postMessage(
+            {
+              type: "gms.cloudSession",
+              viewerUrl: session.viewerUrl,
+              sessionId: session.sessionId,
+              url: nextUrl
+            },
+            "*"
+          );
+        }
+      } catch (err) {
+        const message =
+          err?.statusCode === 503
+            ? "Cloud browser isn't configured on this server (set STEEL_API_KEY)."
+            : err?.statusCode === 402
+              ? "Cloud browser requires the Pro tier ($89/mo)."
+              : `Couldn't start cloud session: ${err?.message || err}`;
+        iframe?.contentWindow?.postMessage(
+          { type: "gms.cloudError", error: message },
+          "*"
+        );
+      }
+      return true;
+    }
+
+    if (mode === "desktop") {
+      const oldWindowId = browserSurface.companionWindowId;
+      if (oldWindowId) {
+        try {
+          const bridge = await import("/mod/_core/web_browsing/companion-bridge.js");
+          await bridge.companion.closeWindow(oldWindowId);
+        } catch {}
+        browserSurface.companionWindowId = null;
+        browserSurface.companionTabId = null;
+      }
+      this.stopCompanionPreviewStream(id);
       return true;
     }
     let bridge;
