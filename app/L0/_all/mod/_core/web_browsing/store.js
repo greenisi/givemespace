@@ -2449,6 +2449,36 @@ const model = {
     if (!normalizedUrl) {
       return false;
     }
+    // Respect the user's browser-mode preference set by the picker in
+    // browser-frame.html. Modes:
+    //   companion (default) — spawn Companion popup overlay (Free).
+    //   cloud              — would use Browserbase; not yet built. Don't
+    //                        spawn anything; iframe shows the upsell.
+    //   desktop            — direct user to the desktop app; iframe shows
+    //                        the download CTA.
+    let mode = "companion";
+    try {
+      const stored = String(globalThis.localStorage?.getItem("gms.browserMode") || "");
+      if (stored === "cloud" || stored === "desktop") mode = stored;
+    } catch {}
+    if (mode !== "companion") {
+      // Tear down any existing companion popup so we don't leave it
+      // floating after a mode switch.
+      const oldWindowId = browserSurface.companionWindowId;
+      if (oldWindowId) {
+        try {
+          const bridge = await import("/mod/_core/web_browsing/companion-bridge.js");
+          await bridge.companion.closeWindow(oldWindowId);
+        } catch {}
+        browserSurface.companionWindowId = null;
+        browserSurface.companionTabId = null;
+      }
+      this.stopCompanionPreviewStream(id);
+      // Return true so the iframe.src fallback (which would 4xx on most
+      // sites) does NOT run. The iframe's mode-body already explains
+      // the chosen surface.
+      return true;
+    }
     let bridge;
     try {
       bridge = await import("/mod/_core/web_browsing/companion-bridge.js");

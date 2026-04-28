@@ -109,6 +109,56 @@
         color: rgba(239, 245, 255, 0.7);
       }
 
+      .browser-frame-mode-picker {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .browser-frame-mode-chip {
+        appearance: none;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgba(239, 245, 255, 0.8);
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        text-align: left;
+        display: grid;
+        gap: 2px;
+        min-width: 7.5rem;
+        font: 500 12px/1.25 "SF Pro Text", system-ui, sans-serif;
+      }
+      .browser-frame-mode-chip strong {
+        font-size: 12px;
+        letter-spacing: 0.01em;
+      }
+      .browser-frame-mode-chip span {
+        font-size: 10.5px;
+        color: rgba(239, 245, 255, 0.55);
+        font-weight: 500;
+      }
+      .browser-frame-mode-chip:hover {
+        border-color: rgba(89, 240, 168, 0.5);
+        color: rgba(255, 255, 255, 0.95);
+      }
+      .browser-frame-mode-chip[aria-checked="true"] {
+        background: rgba(89, 240, 168, 0.12);
+        border-color: rgba(89, 240, 168, 0.6);
+        color: #59f0a8;
+      }
+      .browser-frame-mode-chip[aria-checked="true"] span {
+        color: rgba(89, 240, 168, 0.7);
+      }
+      .browser-frame-mode-body p { margin: 0 0 6px; }
+      .browser-frame-mode-body[hidden] { display: none; }
+      .browser-frame-mode-body a {
+        color: #59f0a8;
+        text-decoration: none;
+      }
+      .browser-frame-mode-body a:hover { text-decoration: underline; }
+
       .browser-frame-runtime-variant[hidden] {
         display: none !important;
       }
@@ -246,9 +296,38 @@
         </div>
 
         <div class="browser-frame-runtime-variant" data-browser-frame-variant="companion" hidden>
-          <p><strong>Companion connected</strong> — your browser is the surface.</p>
-          <p class="browser-frame-empty-state-note">Use the address bar above (or ask the agent) to open a page in your browser. GiveMeSpace will navigate, read, and click on your behalf.</p>
-          <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
+          <div class="browser-frame-mode-picker" role="radiogroup" aria-label="Browser rendering mode">
+            <button type="button" class="browser-frame-mode-chip" data-mode="companion" role="radio" aria-checked="true">
+              <strong>My browser</strong>
+              <span>Free · Companion</span>
+            </button>
+            <button type="button" class="browser-frame-mode-chip" data-mode="cloud" role="radio" aria-checked="false">
+              <strong>Cloud browser</strong>
+              <span>Pro · seamless</span>
+            </button>
+            <button type="button" class="browser-frame-mode-chip" data-mode="desktop" role="radio" aria-checked="false">
+              <strong>Desktop app</strong>
+              <span>Native · free</span>
+            </button>
+          </div>
+
+          <div class="browser-frame-mode-body" data-mode-body="companion">
+            <p><strong>Companion connected</strong> — your browser is the surface.</p>
+            <p class="browser-frame-empty-state-note">Type a URL above (or ask the agent) and the page opens in your real browser session, overlaid here. macOS will draw a thin window title bar — that's the seam.</p>
+            <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
+          </div>
+
+          <div class="browser-frame-mode-body" data-mode-body="cloud" hidden>
+            <p><strong>Cloud browser</strong> — true seamless embed.</p>
+            <p class="browser-frame-empty-state-note">Headless Chromium runs on our servers, video-streamed into this frame. No popup, no title bar, real interactivity.</p>
+            <p class="browser-frame-empty-state-note">Pro plan, $89/mo. <a href="https://givemespace.ai/pricing" target="_blank" rel="noopener">See pricing ↗</a> · <em>Currently building (Phase 4.5 W4)</em></p>
+          </div>
+
+          <div class="browser-frame-mode-body" data-mode-body="desktop" hidden>
+            <p><strong>Desktop app</strong> — native, fully embedded.</p>
+            <p class="browser-frame-empty-state-note">Electron build with a real webview component. No extension, no popup, runs fully offline. Self-host on your own machine.</p>
+            <p class="browser-frame-empty-state-note"><a href="https://github.com/greenisi/givemespace/releases/latest" target="_blank" rel="noopener">Download for Mac · Windows · Linux ↗</a></p>
+          </div>
         </div>
       </div>
     </main>
@@ -441,6 +520,62 @@
       previewImg?.addEventListener("click", () => {
         if (typeof activeWindowId === "number") focusBtn?.click();
       });
+    </script>
+
+    <script>
+      // Browser-mode picker. Three modes share the same underlying URL bar
+      // and address submit; only the rendering strategy differs.
+      //   - companion : Companion extension popup overlay (Free)
+      //   - cloud     : Headless Chromium video stream (Pro, building)
+      //   - desktop   : Native Electron app (always Free, separate download)
+      // Choice persists in localStorage so it survives reloads. Other
+      // modules in the GMS app read window.localStorage.getItem("gms.browserMode")
+      // when deciding whether to spawn the Companion popup.
+      (function initModePicker() {
+        const STORAGE_KEY = "gms.browserMode";
+        const VALID_MODES = new Set(["companion", "cloud", "desktop"]);
+        const chips = document.querySelectorAll("[data-mode]");
+        const bodies = document.querySelectorAll("[data-mode-body]");
+        if (!chips.length || !bodies.length) return;
+
+        function readMode() {
+          let stored = "";
+          try {
+            stored = String(globalThis.localStorage?.getItem(STORAGE_KEY) || "");
+          } catch {}
+          return VALID_MODES.has(stored) ? stored : "companion";
+        }
+
+        function applyMode(mode) {
+          chips.forEach((chip) => {
+            const isActive = chip.getAttribute("data-mode") === mode;
+            chip.setAttribute("aria-checked", String(isActive));
+          });
+          bodies.forEach((body) => {
+            body.hidden = body.getAttribute("data-mode-body") !== mode;
+          });
+          try {
+            globalThis.localStorage?.setItem(STORAGE_KEY, mode);
+          } catch {}
+          // Notify the parent app (store.js) so it can decide whether to
+          // spawn the Companion popup on the next URL submit.
+          try {
+            globalThis.parent?.postMessage(
+              { type: "gms.browserMode", mode },
+              "*"
+            );
+          } catch {}
+        }
+
+        chips.forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const mode = chip.getAttribute("data-mode");
+            if (VALID_MODES.has(mode)) applyMode(mode);
+          });
+        });
+
+        applyMode(readMode());
+      })();
     </script>
   </body>
 </html>
