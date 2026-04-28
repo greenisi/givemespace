@@ -527,6 +527,21 @@
         }
         if (msg.type === "gms.cloudSession" && typeof msg.viewerUrl === "string") {
           // Parent (store.js) navigated; auto-load session into cloud iframe.
+          // Release any previous session FIRST so we don't accumulate
+          // concurrent live sessions burning minutes in parallel.
+          const prevSessionId = activeSessionId;
+          if (prevSessionId && prevSessionId !== msg.sessionId) {
+            // Fire-and-forget — best-effort cost guardrail.
+            (async () => {
+              try {
+                const bridge = await import(
+                  "/mod/_core/web_browsing/cloud-browser-bridge.js"
+                );
+                await bridge.releaseCloudSession({ sessionId: prevSessionId });
+              } catch {}
+            })();
+          }
+          activeSessionId = typeof msg.sessionId === "string" ? msg.sessionId : null;
           const cloudFrame = document.querySelector("[data-cloud-frame]");
           const cloudIframe = document.querySelector("[data-cloud-iframe]");
           if (cloudIframe) cloudIframe.src = msg.viewerUrl;
