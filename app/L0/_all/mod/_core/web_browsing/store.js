@@ -2465,9 +2465,9 @@ const model = {
     // browser-frame.html. Modes:
     //   cloud (default) — Steel.dev session, iframed inline. Universal,
     //                     mobile-friendly. Tier-gated.
-    //   companion       — Companion extension popup overlay. Real Chrome
-    //                     session, but pops a separate window.
     //   desktop         — Direct user to the desktop app.
+    //   companion       — Hidden from picker; advanced users only
+    //                     (Companion extension popup overlay).
     let mode = "cloud";
     try {
       const stored = String(globalThis.localStorage?.getItem("gms.browserMode.v2") || "");

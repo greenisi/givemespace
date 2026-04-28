@@ -349,15 +349,11 @@
           <div class="browser-frame-mode-picker" role="radiogroup" aria-label="Browser rendering mode">
             <button type="button" class="browser-frame-mode-chip" data-mode="cloud" role="radio" aria-checked="true">
               <strong>Cloud browser</strong>
-              <span>Pro · inline · phone</span>
-            </button>
-            <button type="button" class="browser-frame-mode-chip" data-mode="companion" role="radio" aria-checked="false">
-              <strong>My browser</strong>
-              <span>Free · pops a window</span>
+              <span>Pro · renders inline</span>
             </button>
             <button type="button" class="browser-frame-mode-chip" data-mode="desktop" role="radio" aria-checked="false">
               <strong>Desktop app</strong>
-              <span>Native · free</span>
+              <span>Free · download</span>
             </button>
           </div>
 
@@ -368,11 +364,6 @@
             <div class="browser-frame-cloud-error" data-cloud-error hidden></div>
           </div>
 
-          <div class="browser-frame-mode-body" data-mode-body="companion" hidden>
-            <p><strong>Companion mode</strong> — pages open in a real Chrome popup window outside this frame.</p>
-            <p class="browser-frame-empty-state-note">Pick this if you want your real cookies / logins. Switch to <strong>Cloud</strong> if you want pages to render inline without a popup.</p>
-            <p class="browser-frame-empty-state-note" data-browser-frame-companion-version></p>
-          </div>
 
           <div class="browser-frame-mode-body" data-mode-body="desktop" hidden>
             <p><strong>Desktop app</strong> — native, fully embedded.</p>
@@ -673,7 +664,11 @@
       // when deciding whether to spawn the Companion popup.
       (function initModePicker() {
         const STORAGE_KEY = "gms.browserMode.v2";
-        const VALID_MODES = new Set(["companion", "cloud", "desktop"]);
+        // companion mode removed from the picker UX (was causing popup-
+        // window confusion). The bridge code remains in the repo for
+        // advanced users who manually set localStorage["gms.browserMode.v2"]
+        // to "companion", but the default surface is cloud + desktop only.
+        const VALID_MODES = new Set(["cloud", "desktop"]);
         const chips = document.querySelectorAll("[data-mode]");
         const bodies = document.querySelectorAll("[data-mode-body]");
         if (!chips.length || !bodies.length) return;
