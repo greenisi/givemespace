@@ -2421,11 +2421,69 @@ const model = {
       : null;
 
     if (!payload) {
-      this.performNavigateFallback(id, nextUrl);
+      const companionHandled = await this.tryCompanionNavigate(id, nextUrl);
+      if (!companionHandled) {
+        this.performNavigateFallback(id, nextUrl);
+      }
     }
 
     browserSurface.bridgeStateReady = false;
     this.notifyBrowserElementState(id);
+  },
+
+  // Companion (Chrome extension) navigation path. When the user is in browser
+  // runtime AND the GiveMeSpace Companion extension is installed + granted
+  // <all_urls>, send the navigation to a real Chrome tab in the user's main
+  // window instead of the iframe (which X-Frame-Options blocks for ~every
+  // real site). Each browser surface remembers its companion tab id so
+  // subsequent navigations reuse the same tab. Returns true if handled.
+  async tryCompanionNavigate(id, url) {
+    if (this.usesDesktopWebviewSurface || this.usesNativeDesktopSurface) {
+      return false;
+    }
+    const browserSurface = this.getBrowser(id);
+    if (!browserSurface) {
+      return false;
+    }
+    const normalizedUrl = resolveBrowserLocation(url || "");
+    if (!normalizedUrl) {
+      return false;
+    }
+    let bridge;
+    try {
+      bridge = await import("/mod/_core/web_browsing/companion-bridge.js");
+    } catch {
+      return false;
+    }
+    let available = false;
+    try {
+      available = await bridge.companionAvailable;
+    } catch {
+      return false;
+    }
+    if (!available) {
+      return false;
+    }
+    const existingTabId = browserSurface.companionTabId;
+    if (existingTabId) {
+      try {
+        await bridge.companion.navigate(normalizedUrl, existingTabId);
+        return true;
+      } catch {
+        // Tab was probably closed by the user; fall through to createTab.
+        browserSurface.companionTabId = null;
+      }
+    }
+    try {
+      const created = await bridge.companion.createTab(normalizedUrl, true);
+      if (created?.tabId) {
+        browserSurface.companionTabId = created.tabId;
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
   },
 
   performNavigateFallback(id, nextUrl) {
