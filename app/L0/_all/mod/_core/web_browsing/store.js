@@ -2406,9 +2406,20 @@ const model = {
       return;
     }
 
+    const placeholderUrl = "/mod/_core/web_browsing/browser-frame.html";
+    const isBrowserRuntime =
+      !this.usesDesktopWebviewSurface && !this.usesNativeDesktopSurface;
+
     browserSurface.addressValue = nextUrl;
     browserSurface.currentUrl = nextUrl;
-    browserSurface.frameSrc = nextUrl;
+    // In the browser runtime (web app, no Electron webview), the iframe
+    // CANNOT meaningfully load arbitrary third-party URLs — X-Frame-Options
+    // blocks ~every real site. So the iframe stays pinned to the
+    // placeholder (which renders the mode picker + Companion overlay +
+    // Cloud iframe). The user's URL is delivered through whichever mode
+    // the picker has active (Companion popup, Cloud session, or the
+    // Desktop-app CTA). Only desktop runtimes set frameSrc to nextUrl.
+    browserSurface.frameSrc = isBrowserRuntime ? placeholderUrl : nextUrl;
     this.startPendingNavigation(id);
     this.notifyBrowserElementState(id);
     if (browserSurface.isWindow) {
@@ -2422,18 +2433,8 @@ const model = {
 
     if (!payload) {
       const companionHandled = await this.tryCompanionNavigate(id, nextUrl);
-      if (companionHandled) {
-        // Keep the iframe on the placeholder (which renders the picker
-        // + Companion overlay + Cloud iframe). Without this reset the
-        // iframe would still have src=<userURL> from the state mutation
-        // above, triggering an X-Frame-Options blocked load and a
-        // broken-image icon for any non-iframable site (Google, banks,
-        // every modern SPA).
-        const placeholderUrl = "/mod/_core/web_browsing/browser-frame.html";
-        if (browserSurface.frameSrc !== placeholderUrl) {
-          browserSurface.frameSrc = placeholderUrl;
-        }
-      } else {
+      if (!companionHandled && !isBrowserRuntime) {
+        // Desktop webview path — iframe.src can legitimately load the URL.
         this.performNavigateFallback(id, nextUrl);
       }
     }
